@@ -1,53 +1,71 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>iPhone Lock Screen</title>
-<link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Passcode</title>
+
+  <!-- Manifest (relative path) -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- iOS PWA support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Passcode">
+
+  <!-- iOS home icons (relative path) -->
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="apple-touch-icon-152.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120.png">
+
+  <meta name="theme-color" content="#000000">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="wallpaper"></div>
+  <div class="lockscreen">
+    <div class="prompt">Swipe up for Face ID or<br>Enter Passcode</div>
 
-<div class="lock-container">
-  <div class="time">12:34</div>
-  <div class="date">Sunday, August 10</div>
+    <!-- 4 dots -->
+    <div class="dots" id="dots" aria-hidden="true">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    </div>
 
-  <div class="passcode-dots">
-    <div class="dot"></div>
-    <div class="dot"></div>
-    <div class="dot"></div>
-    <div class="dot"></div>
-    <div class="dot"></div>
-    <div class="dot"></div>
-  </div>
+    <!-- keypad -->
+    <div class="keypad" id="keypad" role="group" aria-label="Passcode keypad">
+      <button class="key" data-num="1"><span class="num">1</span><span class="letters"></span></button>
+      <button class="key" data-num="2"><span class="num">2</span><span class="letters">ABC</span></button>
+      <button class="key" data-num="3"><span class="num">3</span><span class="letters">DEF</span></button>
 
-  <div class="keypad">
-    <div class="row">
-      <button data-key="1"><span class="num">1</span></button>
-      <button data-key="2"><span class="num">2</span><span class="letters">ABC</span></button>
-      <button data-key="3"><span class="num">3</span><span class="letters">DEF</span></button>
+      <button class="key" data-num="4"><span class="num">4</span><span class="letters">GHI</span></button>
+      <button class="key" data-num="5"><span class="num">5</span><span class="letters">JKL</span></button>
+      <button class="key" data-num="6"><span class="num">6</span><span class="letters">MNO</span></button>
+
+      <button class="key" data-num="7"><span class="num">7</span><span class="letters">PQRS</span></button>
+      <button class="key" data-num="8"><span class="num">8</span><span class="letters">TUV</span></button>
+      <button class="key" data-num="9"><span class="num">9</span><span class="letters">WXYZ</span></button>
+
+      <!-- spacer / 0 / spacer -->
+      <div class="key empty" aria-hidden="true"></div>
+      <button class="key" data-num="0"><span class="num">0</span><span class="letters"></span></button>
+      <div class="key empty" aria-hidden="true"></div>
     </div>
-    <div class="row">
-      <button data-key="4"><span class="num">4</span><span class="letters">GHI</span></button>
-      <button data-key="5"><span class="num">5</span><span class="letters">JKL</span></button>
-      <button data-key="6"><span class="num">6</span><span class="letters">MNO</span></button>
-    </div>
-    <div class="row">
-      <button data-key="7"><span class="num">7</span><span class="letters">PQRS</span></button>
-      <button data-key="8"><span class="num">8</span><span class="letters">TUV</span></button>
-      <button data-key="9"><span class="num">9</span><span class="letters">WXYZ</span></button>
-    </div>
-    <div class="row">
-      <button class="empty"></button>
-      <button data-key="0"><span class="num">0</span></button>
-      <button class="delete">⌫</button>
+
+    <!-- bottom actions -->
+    <div class="bottom-actions">
+      <button class="action" id="emergency">Emergency</button>
+      <button class="action" id="cancel">Cancel</button>
     </div>
   </div>
-</div>
 
-<script src="app.js"></script>
+  <script src="app.js" defer></script>
+  <script>
+    // register service worker (relative path)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+    }
+  </script>
 </body>
 </html>
+
