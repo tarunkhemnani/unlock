@@ -1,0 +1,176 @@
+:root{
+  --circle-size: 74px;
+  --gap-x: 28px;
+  --gap-y: 14px;
+  --safe-bottom: env(safe-area-inset-bottom);
+}
+
+/* base */
+html,body{
+  height:100%;
+  margin:0;
+  padding:0;
+  background-color:#000;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%;
+}
+
+/* wallpaper as fixed full-bleed layer (prevents bottom stripe) */
+.lockscreen::before{
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url('wallpaper.jpg'); /* put your wallpaper.jpg here */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+}
+
+/* container above wallpaper */
+.lockscreen{
+  position: relative;
+  z-index: 1;
+  height: 100svh;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: calc(env(safe-area-inset-top) + 92px);
+  padding-bottom: calc(var(--safe-bottom) + 8px);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* prompt */
+.prompt{
+  position: relative;
+  z-index: 3;
+  text-align:center;
+  font-size:20px;
+  font-weight:600;
+  line-height:1.15;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  margin-bottom: 20px;
+  color: white;
+}
+
+/* dots */
+.dots{
+  display:flex;
+  gap:12px;
+  margin-bottom: 28px;
+  pointer-events:none;
+  z-index: 3;
+}
+.dot{
+  width:12px; height:12px; border-radius:50%;
+  border:2px solid rgba(255,255,255,0.35); background: transparent;
+  transition: background .12s, transform .12s;
+}
+.dot.filled{ background:white; border-color:white; transform: scale(1.06); }
+
+/* keypad */
+.keypad{
+  width: 100%;
+  max-width: 420px;
+  display: grid;
+  grid-template-columns: repeat(3, var(--circle-size));
+  gap: var(--gap-y) var(--gap-x);
+  justify-content: center;
+  align-items: center;
+  margin-top: 6px;
+  z-index: 2;
+}
+
+/* keys */
+.key{
+  width: var(--circle-size);
+  height: var(--circle-size);
+  border-radius: 999px;
+  display:inline-flex;
+  flex-direction: column;
+  align-items:center;
+  justify-content:center;
+  background: rgba(255,255,255,0.08);
+  color: white;
+  font-size: 28px;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.55);
+  position: relative;
+  z-index: 2;
+}
+.key:active{ transform: scale(.98); }
+
+.key.empty{
+  background: transparent !important;
+  box-shadow:none !important;
+  cursor: default;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* number and small letters */
+.key .num{ display:block; font-weight:600; line-height:1; font-size: 28px; color: white !important; -webkit-font-smoothing:antialiased; }
+.key .letters{ display:block; font-size: 11px; opacity:0.85; margin-top:6px; letter-spacing: .6px; color: rgba(255,255,255,0.95); }
+
+/* bottom actions */
+.bottom-actions{
+  position: absolute;
+  left: 0; right: 0;
+  bottom: calc(var(--safe-bottom) + 8px);
+  display:flex;
+  justify-content: space-between;
+  padding: 0 28px;
+  box-sizing:border-box;
+  z-index: 3;
+}
+.action{ background:none; border:none; color:white; font-size: 18px; opacity: 0.98; cursor:pointer; -webkit-tap-highlight-color: transparent; }
+/* ---------- UNLOCK ANIMATION + HOMESCREEN REPLICA (append at EOF) ---------- */
+.unlock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;              /* above everything when active */
+  display: none;             /* toggled by JS */
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  pointer-events: none;      /* disabled until fully shown */
+}
+
+.homescreen-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform-origin: center;
+  transform: scale(0.98);
+  opacity: 0;
+  filter: blur(4px) saturate(0.95);
+}
+
+.unlock-overlay.show {
+  display: flex;
+  pointer-events: auto; /* allow interaction after reveal if desired */
+}
+.unlock-overlay.show .homescreen-img {
+  animation: homescreenReveal 650ms cubic-bezier(.2,.8,.2,1) forwards;
+}
+
+@keyframes homescreenReveal {
+  0%   { transform: scale(0.98); opacity: 0; filter: blur(8px) saturate(.8); }
+  60%  { transform: scale(1.02); opacity: 1; filter: blur(1px) saturate(1.05); }
+  100% { transform: scale(1);    opacity: 1; filter: blur(0) saturate(1); }
+}
+
+/* subtle lock UI fade/zoom — JS will add .unlocking to .lockscreen */
+.lockscreen.unlocking {
+  transition: transform 450ms cubic-bezier(.2,.8,.2,1), opacity 450ms ease-in;
+  transform: scale(0.98);
+  opacity: 0;
+}
