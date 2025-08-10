@@ -1,6 +1,6 @@
 :root {
   /* reduced by 4px from your current 80px */
-  --circle-size: 60px;
+  --circle-size: 70px;
   --gap-x: 28px;
   --gap-y: 18px;
   --safe-bottom: env(safe-area-inset-bottom);
@@ -187,6 +187,7 @@ html,body{
   .key .num { font-size: 30px; }
   .key .letters { font-size: 10px; margin-top:5px; }
 }
+
 
 
 
