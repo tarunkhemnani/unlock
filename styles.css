@@ -1,0 +1,218 @@
+/* =========================
+   styles.css — iPhone-style passcode keypad
+   Replace your existing styles.css with this file.
+   Tune CSS variables below if you want + / - 1–3px nudges.
+   ========================= */
+
+:root{
+  /* tweak these to nudge overall look */
+  --circle-size: 86px;         /* key diameter */
+  --gap-x: 34px;               /* horizontal gap */
+  --gap-y: 22px;               /* vertical gap */
+  --prompt-top-offset: calc(env(safe-area-inset-top) + 110px); /* space above prompt */
+  --dot-size: 13px;
+  --dot-border: 2px;
+  --safe-bottom: env(safe-area-inset-bottom);
+  --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ---------- base / wallpaper layer ---------- */
+html,body{
+  height:100%;
+  margin:0;
+  padding:0;
+  background-color:#000;
+  font-family: var(--font-stack);
+  -webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%;
+  overflow: hidden; /* keep full-bleed feel */
+}
+
+/* draw wallpaper as a fixed full-bleed layer (prevents bottom stripe) */
+.lockscreen::before{
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url('wallpaper.jpg'); /* ensure wallpaper.jpg exists */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+  /* a subtle dim to help white text pop like iOS */
+  background-blend-mode: overlay;
+}
+
+/* container */
+.lockscreen{
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100svh;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: var(--prompt-top-offset);
+  padding-bottom: calc(var(--safe-bottom) + 10px);
+  box-sizing: border-box;
+}
+
+/* ---------- prompt ---------- */
+.prompt{
+  z-index: 4;
+  text-align: center;
+  color: rgba(255,255,255,0.98);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.12;
+  text-shadow: 0 3px 14px rgba(0,0,0,0.65);
+  margin: 0 18px 18px;
+}
+
+/* ---------- passcode dots (rings when empty, white filled when entered) ---------- */
+.dots{
+  z-index: 4;
+  display:flex;
+  gap: 14px;
+  margin-bottom: 28px;
+  pointer-events: none;
+}
+.dot{
+  width: var(--dot-size);
+  height: var(--dot-size);
+  border-radius: 50%;
+  border: var(--dot-border) solid rgba(255,255,255,0.95); /* thin white ring before typing */
+  background: transparent;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.45) inset;
+  transition: transform .12s ease, background .12s ease, border-color .12s ease;
+}
+.dot.filled{
+  background: white;
+  border-color: rgba(255,255,255,0.98);
+  transform: scale(1.06);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.6) inset;
+}
+
+/* ---------- keypad grid ---------- */
+.keypad{
+  z-index: 3;
+  width: 100%;
+  max-width: 420px;
+  display: grid;
+  grid-template-columns: repeat(3, var(--circle-size));
+  gap: var(--gap-y) var(--gap-x);
+  justify-content: center;
+  align-items: center;
+  margin-top: 6px;
+  margin-bottom: 18px;
+}
+
+/* ---------- key styles: frosted glass, radial highlight, darker rim ---------- */
+.key{
+  width: var(--circle-size);
+  height: var(--circle-size);
+  border-radius: 999px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* frosted backdrop + layered gradients for highlight + rim */
+  background:
+    radial-gradient(circle at 36% 28%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 20%, rgba(255,255,255,0.01) 38%, rgba(255,255,255,0) 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.07));
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow:
+    0 10px 32px rgba(0,0,0,0.62),
+    inset 0 -8px 18px rgba(0,0,0,0.45);
+  color: white;
+  transition: transform .12s cubic-bezier(.2,.9,.3,1), box-shadow .12s ease, background .12s ease;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* pressed state: subtle brighten center + tiny shrink */
+.key:active{
+  transform: scale(0.985);
+  background:
+    radial-gradient(circle at 36% 28%, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.06) 20%, rgba(255,255,255,0.02) 38%, rgba(255,255,255,0) 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.08));
+  box-shadow:
+    0 8px 22px rgba(0,0,0,0.58),
+    inset 0 -6px 14px rgba(0,0,0,0.48);
+}
+
+/* invisible spacer slots keep grid alignment and do not capture clicks */
+.key.empty{
+  visibility: hidden;
+  pointer-events: none;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* number & letters layout */
+.key .num{
+  display:block;
+  font-size: 36px;           /* larger number like iPhone */
+  font-weight: 600;
+  line-height: 1;
+  color: rgba(255,255,255,0.98);
+  text-shadow: 0 3px 12px rgba(0,0,0,0.55);
+}
+.key .letters{
+  display:block;
+  margin-top: 6px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: white;              /* pure white for letters as requested */
+  opacity: 1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+}
+
+/* ---------- bottom actions (Emergency / Cancel) ---------- */
+.bottom-actions{
+  z-index: 5;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--safe-bottom) + 8px);
+  display:flex;
+  justify-content: space-between;
+  padding: 0 28px;
+  box-sizing: border-box;
+}
+.action{
+  background:none;
+  border:none;
+  color: white;
+  font-size: 18px;
+  opacity: 0.98;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- unlock overlay (homescreen reveal) - keep minimal */ 
+.unlock-overlay{ position: fixed; inset:0; z-index:9999; display:none; align-items:center; justify-content:center; pointer-events:none; }
+.unlock-overlay.show{ display:flex; pointer-events:auto; }
+.homescreen-img{ width:100%; height:100%; object-fit:cover; transform-origin:center; transform:scale(0.98); opacity:0; filter: blur(4px) saturate(.95); animation-fill-mode:forwards; }
+.lockscreen.unlocking{ transition: transform 420ms cubic-bezier(.2,.8,.2,1), opacity 420ms ease-in; transform: translateY(-8px) scale(.98); opacity:0; }
+@keyframes homescreenReveal{ 0%{ transform:scale(0.98); opacity:0; filter:blur(8px)} 60%{ transform:scale(1.02); opacity:1; filter:blur(1px)} 100%{ transform:scale(1); opacity:1; filter:blur(0)} }
+.unlock-overlay.show .homescreen-img{ animation: homescreenReveal 680ms cubic-bezier(.16,.98,.43,1) forwards; }
+
+/* ---------- small device tweaks ---------- */
+@media (max-height:700px){
+  :root{ --circle-size: 76px; --gap-y: 18px; }
+  .prompt{ font-size: 19px; margin-bottom: 14px; }
+  .key .num{ font-size: 32px; }
+  .key .letters{ font-size: 10px; margin-top:4px; }
+}
+
+/* ---------- quick tuning knobs (if you want to micro-tweak) ----------
+   - to slightly reduce key size: change --circle-size (e.g. 84px)
+   - to thin dots: change --dot-border to 1.6px
+   - to raise/lower prompt: change --prompt-top-offset
+   - to reduce blur (performance): reduce backdrop-filter blur value
+   -------------------------------------------------------------------- */
