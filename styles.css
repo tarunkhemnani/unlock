@@ -1,6 +1,6 @@
 :root {
   /* reduced by 4px from your current 80px */
-  --circle-size: 70px;
+  --circle-size: 80px;
   --gap-x: 28px;
   --gap-y: 18px;
   --safe-bottom: env(safe-area-inset-bottom);
@@ -141,13 +141,13 @@ html,body{
   display:block;
   font-weight:600;
   line-height:1;
-  font-size: 32px;
+  font-size: 34px;
   color: white !important;
   text-shadow: 0 2px 10px rgba(0,0,0,0.45);
 }
 .key .letters {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   color: #fff; /* pure white */
   opacity: 1;
   margin-top: 6px;
@@ -187,6 +187,7 @@ html,body{
   .key .num { font-size: 30px; }
   .key .letters { font-size: 10px; margin-top:5px; }
 }
+
 
 
 
