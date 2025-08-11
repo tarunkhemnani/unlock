@@ -125,12 +125,51 @@ html, body {
   z-index: 2;
   transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
 }
+
+/* replace the previous .key:active rule with this (no popping, only subtle background) */
 .key:active {
-  transform: scale(.985);
-  background: rgba(255,255,255,0.12);
-  backdrop-filter: blur(30px);
+  transform: none; /* no pop */
+  background: rgba(255,255,255,0.10);
   -webkit-backdrop-filter: blur(30px);
+  backdrop-filter: blur(30px);
 }
+
+/* glow layer (radial white bloom) */
+.key::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 36%,
+                              rgba(255,255,255,0.92) 0%,
+                              rgba(255,255,255,0.24) 28%,
+                              rgba(255,255,255,0.08) 45%,
+                              transparent 70%);
+  opacity: 0;
+  transition: opacity .12s cubic-bezier(.2,.9,.2,1), transform .12s ease;
+  transform: scale(0.98);
+  will-change: opacity, transform;
+}
+
+/* stronger outer glow when active */
+.key.glow {
+  background: rgba(255,255,255,0.14);
+  box-shadow: 0 10px 30px rgba(255,255,255,0.14), 0 2px 8px rgba(0,0,0,0.30);
+}
+
+/* show the inner bloom */
+.key.glow::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* intensify number glow without changing layout */
+.key.glow .num {
+  text-shadow: 0 6px 22px rgba(255,255,255,0.9);
+  color: white !important;
+}
+
 .key.empty {
   background: transparent !important;
   box-shadow: none !important;
