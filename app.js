@@ -87,21 +87,44 @@
     }
   }
 
-  // Handle brightness effect on touch
+  // Frame-perfect press animation
+  function animateBrightness(el, target, duration) {
+    let startTime;
+    const initial = parseFloat(el.dataset.brightness || "1");
+    const change = target - initial;
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function frame(ts) {
+      if (!startTime) startTime = ts;
+      const progress = Math.min((ts - startTime) / duration, 1);
+      const eased = easeOutCubic(progress);
+      const value = initial + change * eased;
+      el.style.filter = `brightness(${value})`;
+      el.dataset.brightness = value.toFixed(3);
+      if (progress < 1) {
+        requestAnimationFrame(frame);
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
   keys.forEach(k => {
     const num = k.dataset.num;
     if (!num) return;
 
     k.addEventListener('touchstart', () => {
-      k.classList.add('pressed');
+      animateBrightness(k, 1.45, 80); // ramp up
     }, { passive: true });
 
-    const removePress = () => {
-      k.classList.remove('pressed');
+    const endPress = () => {
+      animateBrightness(k, 1, 100); // ramp down
     };
-    k.addEventListener('touchend', removePress);
-    k.addEventListener('touchcancel', removePress);
-    k.addEventListener('mouseleave', removePress);
+    k.addEventListener('touchend', endPress);
+    k.addEventListener('touchcancel', endPress);
+    k.addEventListener('mouseleave', endPress);
 
     k.addEventListener('click', () => {
       if (code.length >= MAX) return;
