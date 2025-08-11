@@ -10,28 +10,31 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
+  /* Use the wallpaper as the body background as a fallback/primary source.
+     background-attachment: fixed helps ensure it stays pinned to viewport. */
   background-color: #000;
+  background-image: url('wallpaper.jpg');
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
 }
 
-/* wallpaper fixed layer — moved to body so transforms on .lockscreen won't affect it */
+/* Keep wallpaper available as a pseudo for layering if desired,
+   but the body background is the primary fix for the iOS issue. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  background-image: url('wallpaper.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  /* keep this behind everything */
   z-index: 0;
   pointer-events: none;
-  /* ensure it's behind everything but above the page background */
-  background-attachment: fixed;
 }
 
-/* keep .lockscreen above the wallpaper */
+/* Keep .lockscreen above the wallpaper */
 .lockscreen {
   position: relative;
   z-index: 1;
@@ -169,6 +172,9 @@ body::before {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Unlock overlay MUST be fixed and cover the viewport entirely.
+   Make homescreen image fixed so it always fills viewport, unaffected
+   by transforms/motion of sibling elements. */
 .unlock-overlay {
   position: fixed;
   inset: 0;
@@ -179,16 +185,25 @@ body::before {
   background: transparent;
   pointer-events: none;
 }
+
+/* make sure homescreen image is fixed and covers screen.
+   Using width/height 100vw/100vh avoids any visible black gaps. */
 .homescreen-img {
-  width: 100%;
-  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   object-fit: cover;
-  display: block;
   transform-origin: center;
   transform: scale(0.98);
   opacity: 0;
   filter: blur(4px) saturate(0.95);
+  z-index: 10000; /* above everything */
+  pointer-events: none;
 }
+
+/* show the overlay and animate the homescreen image */
 .unlock-overlay.show {
   display: flex;
   pointer-events: auto;
@@ -202,7 +217,7 @@ body::before {
   100% { transform: scale(1);    opacity: 1; filter: blur(0) saturate(1); }
 }
 
-/* Slide-up unlock animation (applied to .lockscreen — wallpaper is no longer inside it) */
+/* Slide-up unlock animation (applied to .lockscreen) */
 .lockscreen.unlocking {
   animation: lockscreenSlideUp 650ms cubic-bezier(.25,.8,.25,1) forwards;
   will-change: transform, opacity, filter;
