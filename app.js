@@ -120,3 +120,29 @@
   window.__passUI = { getCode: ()=>code, reset, getAttempts };
 
 })();
+/* === Disable pinch & double-tap zoom gestures === */
+(function preventZoomGestures() {
+  // Prevent the old iOS gesturestart (some browsers)
+  window.addEventListener('gesturestart', function(e) {
+    e.preventDefault();
+  }, { passive: false });
+
+  // Prevent multi-touch pinch zoom by blocking touchmove when >1 touch
+  document.addEventListener('touchmove', function(e) {
+    if (e.touches && e.touches.length > 1) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  // Extra: prevent double-tap zoom by catching quick consecutive taps
+  let lastTouch = 0;
+  document.addEventListener('touchend', function(e) {
+    const now = Date.now();
+    if (now - lastTouch <= 300) {
+      // quick second tap — prevent native double-tap-to-zoom
+      e.preventDefault();
+    }
+    lastTouch = now;
+  }, { passive: false });
+})();
+
