@@ -16,7 +16,7 @@ html, body {
   -webkit-text-size-adjust: 100%;
 }
 
-/* wallpaper layer - fixed & isolated */
+/* wallpaper layer - fixed & isolated so transforms won't affect it */
 .wallpaper-layer {
   position: fixed;
   inset: 0;
@@ -26,16 +26,16 @@ html, body {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  /* Force its own composite layer (helps iOS repaint issues) */
+  /* force its own composite layer to reduce repaint issues on iOS */
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
   backface-visibility: hidden;
 }
 
-/* Keep .lockscreen above the wallpaper */
+/* outer container */
 .lockscreen {
   position: relative;
-  z-index: 2; /* above wallpaper-layer */
+  z-index: 2; /* above wallpaper */
   height: 100svh;
   min-height: 100vh;
   width: 100%;
@@ -48,18 +48,19 @@ html, body {
   padding-bottom: calc(var(--safe-bottom) + 8px);
 }
 
-/* inner container — animate this instead of .lockscreen */
+/* inner wrapper (we animate this) */
 .lockscreen-inner {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   z-index: 3;
-  /* promote to its own layer so animation is smooth */
-  -webkit-transform: translateZ(0);
+  -webkit-transform: translateZ(0); /* promote to layer */
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
-/* rest of styles unchanged but ensure z-index ordering is consistent */
+/* prompt / dots */
 .prompt {
   position: relative;
   z-index: 3;
@@ -96,6 +97,7 @@ html, body {
   box-shadow: none;
 }
 
+/* keypad layout */
 .keypad {
   width: 100%;
   max-width: 420px;
@@ -157,6 +159,7 @@ html, body {
   font-weight: 600;
 }
 
+/* bottom actions positioned on the outer .lockscreen so they stay anchored at bottom */
 .bottom-actions {
   position: absolute;
   left: 0;
@@ -174,9 +177,12 @@ html, body {
   color: white;
   font-size: 16px;
   font-weight: 400;
+  opacity: 0.98;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Unlock overlay & homescreen preview - ensure fixed and on top */
+/* unlock overlay & homescreen preview */
 .unlock-overlay {
   position: fixed;
   inset: 0;
@@ -203,28 +209,91 @@ html, body {
   -webkit-transform: translateZ(0);
   backface-visibility: hidden;
 }
+
+/* show overlay */
 .unlock-overlay.show {
   display: flex;
   pointer-events: auto;
 }
-.unlock-overlay.show .homescreen-img {
-  animation: homescreenReveal 650ms cubic-bezier(.2,.8,.2,1) forwards;
+
+/* -----------------------------
+   Enhanced iPhone-like unlock
+   ----------------------------- */
+
+/* subtle shadow while the lock UI lifts */
+.lockscreen-inner {
+  transition: box-shadow 220ms ease;
 }
-@keyframes homescreenReveal {
-  0%   { transform: scale(0.98); opacity: 0; filter: blur(8px) saturate(.8); }
-  60%  { transform: scale(1.02); opacity: 1; filter: blur(1px) saturate(1.05); }
-  100% { transform: scale(1);    opacity: 1; filter: blur(0) saturate(1); }
+.lockscreen-inner.unlocking {
+  /* large soft shadow while animating to give "lifting" impression */
+  box-shadow: 0 40px 90px rgba(0,0,0,0.55);
+  will-change: transform, opacity, filter;
+  -webkit-transform: translateZ(0);
 }
 
-/* Slide up unlock animation applied to .lockscreen-inner (not the outer .lockscreen) */
+/* main slide-up: snappy start, soft landing with slight overshoot */
 .lockscreen-inner.unlocking {
-  animation: lockscreenSlideUp 650ms cubic-bezier(.25,.8,.25,1) forwards;
-  will-change: transform, opacity, filter;
+  animation: lockscreenSlideUp 760ms cubic-bezier(.18,.9,.26,1) forwards;
 }
+
+/* keyframe: quick lift, slight overshoot, then out */
 @keyframes lockscreenSlideUp {
-  0%   { transform: translateY(0); filter: blur(0px); opacity: 1; }
-  60%  { transform: translateY(-40%); filter: blur(2px); opacity: 0.95; }
-  100% { transform: translateY(-100%); filter: blur(6px); opacity: 0; }
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+    filter: blur(0);
+  }
+  40% {
+    /* fast initial movement */
+    transform: translate3d(0, -32%, 0) scale(0.997);
+    opacity: 0.98;
+  }
+  68% {
+    /* slight overshoot past final position to mimic spring */
+    transform: translate3d(0, -106%, 0) scale(0.995);
+    opacity: 0.9;
+    filter: blur(2px);
+  }
+  100% {
+    /* fully offscreen */
+    transform: translate3d(0, -110%, 0) scale(1);
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+/* Homescreen image: scale/overshoot/sharpen for depth */
+.unlock-overlay.show .homescreen-img {
+  animation: homescreenRevealPro 760ms cubic-bezier(.18,.9,.26,1) forwards;
+}
+
+@keyframes homescreenRevealPro {
+  0% {
+    transform: translate3d(0, 6%, 0) scale(0.96);
+    opacity: 0;
+    filter: blur(10px) saturate(.9);
+  }
+  40% {
+    transform: translate3d(0, -2%, 0) scale(1.06); /* slight overshoot scale */
+    opacity: 1;
+    filter: blur(3px) saturate(1.03);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+    filter: blur(0) saturate(1);
+  }
+}
+
+/* small fade of the prompt/dots when animating — improves perceived speed */
+.lockscreen-inner.unlocking .prompt,
+.lockscreen-inner.unlocking .dots {
+  animation: lockContentFade 340ms ease forwards;
+  animation-delay: 80ms;
+}
+@keyframes lockContentFade {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-6px); }
 }
 
 /* Wrong attempt shake */
@@ -243,4 +312,18 @@ html, body {
   animation: passShake 700ms cubic-bezier(.36,.07,.19,.97);
   transform-origin: center;
   will-change: transform;
+}
+
+/* prefer-reduced-motion: avoid all non-essential animations */
+@media (prefers-reduced-motion: reduce) {
+  .lockscreen-inner.unlocking,
+  .unlock-overlay.show .homescreen-img,
+  .lockscreen-inner.unlocking .prompt,
+  .lockscreen-inner.unlocking .dots {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
 }
