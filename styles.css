@@ -165,7 +165,7 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Unlock overlay (covers everything when revealing homescreen) */
+/* Unlock overlay */
 .unlock-overlay {
   position: fixed;
   inset: 0;
@@ -178,7 +178,7 @@ html, body {
   overflow: hidden;
 }
 
-/* curtain panels that will lift up */
+/* curtain panels — frosted/translucent, NOT black */
 .curtain {
   position: absolute;
   inset: 0;
@@ -190,12 +190,17 @@ html, body {
 .curtain .curtain-panel {
   flex: 1 1 50%;
   transform: translateY(0);
-  will-change: transform, filter, opacity;
-  background: linear-gradient(180deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.7) 30%, rgba(0,0,0,0.45) 60%, rgba(0,0,0,0.15) 100%);
-  box-shadow: inset 0 -8px 36px rgba(0,0,0,0.6), 0 18px 40px rgba(0,0,0,0.45);
+  will-change: transform, opacity;
+  /* frosted translucent look */
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(12px) saturate(1.02);
+  -webkit-backdrop-filter: blur(12px) saturate(1.02);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+  transition: opacity .25s ease;
 }
 
-/* homescreen image under curtain */
+/* homescreen image under curtain - slightly pulled upward when revealed */
 .homescreen-img {
   position: absolute;
   inset: 0;
@@ -204,9 +209,10 @@ html, body {
   object-fit: cover;
   display: block;
   transform-origin: center;
-  transform: scale(0.98) translateY(6vh);
+  /* starting a bit lower so reveal lifts it slightly; final will be pulled up */
+  transform: scale(0.99) translateY(2.5vh);
   opacity: 0;
-  filter: blur(6px) saturate(0.9);
+  filter: blur(6px) saturate(0.95);
   z-index: 10;
 }
 
@@ -216,44 +222,44 @@ html, body {
   pointer-events: auto;
 }
 
-/* curtain lift animations (slightly staggered for realism) */
+/* curtains lift up (no black) */
 .curtain.show .curtain-panel.top {
-  animation: curtainLiftTop 700ms cubic-bezier(.2,.8,.2,1) forwards;
+  animation: curtainLiftTop 680ms cubic-bezier(.2,.8,.2,1) forwards;
 }
 .curtain.show .curtain-panel.bottom {
-  animation: curtainLiftBottom 700ms cubic-bezier(.2,.8,.2,1) forwards;
-  animation-delay: 30ms;
+  animation: curtainLiftBottom 680ms cubic-bezier(.2,.8,.2,1) forwards;
+  animation-delay: 18ms;
 }
 
 @keyframes curtainLiftTop {
-  0%   { transform: translateY(0); opacity: 1; filter: blur(1px); }
-  55%  { transform: translateY(-58%); filter: blur(6px); opacity: 1; }
-  100% { transform: translateY(-130%); filter: blur(10px); opacity: 0; }
+  0%   { transform: translateY(0); opacity: 1; }
+  60%  { transform: translateY(-54%); opacity: 1; }
+  100% { transform: translateY(-130%); opacity: 0; }
 }
 @keyframes curtainLiftBottom {
   0%   { transform: translateY(0); opacity: 1; }
-  45%  { transform: translateY(-28%); }
+  48%  { transform: translateY(-28%); }
   100% { transform: translateY(-110%); opacity: 0; }
 }
 
-/* homescreen reveal animation (tuned to match curtain lift) */
+/* homescreen reveal — final translateY is slightly upward (-3vh) for "pulled up" look */
 .unlock-overlay.show .homescreen-img {
-  animation: homescreenReveal 650ms cubic-bezier(.2,.8,.2,1) forwards;
+  animation: homescreenReveal 720ms cubic-bezier(.2,.8,.2,1) forwards;
 }
 @keyframes homescreenReveal {
-  0%   { transform: scale(0.98) translateY(6vh); opacity: 0; filter: blur(6px) saturate(.9); }
+  0%   { transform: scale(0.99) translateY(2.5vh); opacity: 0; filter: blur(6px) saturate(.95); }
   60%  { transform: scale(1.02) translateY(-2vh); opacity: 1; filter: blur(1px) saturate(1.03); }
-  100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0) saturate(1); }
+  100% { transform: scale(1) translateY(-3vh); opacity: 1; filter: blur(0) saturate(1); }
 }
 
-/* lockscreen lifts up & fades (parallax with homescreen) */
+/* lockscreen slides upward to reveal (feels like lock screen is moving) */
 .lockscreen.unlocking {
-  transition: transform 450ms cubic-bezier(.2,.8,.2,1), opacity 450ms ease-in;
-  transform: translateY(-34vh) scale(0.985);
+  transition: transform 680ms cubic-bezier(.2,.8,.2,1), opacity 520ms ease-in;
+  transform: translateY(-110vh) scale(0.995);
   opacity: 0;
 }
 
-/* wrong pass shake */
+/* wrong pass shake (unchanged) */
 @keyframes passShake {
   0%   { transform: translateX(0); }
   6%   { transform: translateX(-20px); }
