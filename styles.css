@@ -126,47 +126,50 @@ html, body {
   transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
 }
 
-/* replace the previous .key:active rule with this (no popping, only subtle background) */
+/* subtle active background (no pop) */
 .key:active {
-  transform: none; /* no pop */
-  background: rgba(255,255,255,0.10);
+  transform: none;
+  background: rgba(255,255,255,0.08);
   -webkit-backdrop-filter: blur(30px);
   backdrop-filter: blur(30px);
 }
 
-/* glow layer (radial white bloom) - softened center so it's not harsh */
+/* glow layer — NO bright centre; gentle, soft rim/backlight across the whole key */
 .key::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: 999px;
   pointer-events: none;
-  background: radial-gradient(circle at 50% 36%,
-                              rgba(255,255,255,0.60) 0%,
-                              rgba(255,255,255,0.18) 28%,
-                              rgba(255,255,255,0.05) 45%,
-                              transparent 70%);
+
+  /* center kept transparent; soft outer glow */
+  background: radial-gradient(circle at 50% 40%,
+                              rgba(255,255,255,0.00) 0%,
+                              rgba(255,255,255,0.01) 28%,
+                              rgba(255,255,255,0.03) 52%,
+                              rgba(255,255,255,0.045) 76%,
+                              rgba(255,255,255,0.06) 100%);
   opacity: 0;
-  transition: opacity .12s cubic-bezier(.2,.9,.2,1), transform .12s ease;
-  transform: scale(0.99);
+  transition: opacity .14s cubic-bezier(.2,.9,.2,1), transform .14s ease;
+  transform: scale(1.02); /* slightly larger so glow sits around the rim */
   will-change: opacity, transform;
 }
 
-/* gentler outer glow when active */
+/* very gentle, whole-button glow when active */
 .key.glow {
-  background: rgba(255,255,255,0.10);
-  box-shadow: 0 8px 20px rgba(255,255,255,0.08), 0 2px 6px rgba(0,0,0,0.28);
+  background: rgba(255,255,255,0.06);
+  box-shadow: 0 6px 18px rgba(255,255,255,0.04), 0 1px 4px rgba(0,0,0,0.24);
 }
 
-/* show the inner bloom (slightly subdued opacity) */
+/* show the subdued outer bloom */
 .key.glow::after {
-  opacity: 0.85;
-  transform: scale(1);
+  opacity: 1;
+  transform: scale(1.0);
 }
 
-/* soften number glow */
+/* much softer number glow */
 .key.glow .num {
-  text-shadow: 0 4px 14px rgba(255,255,255,0.6);
+  text-shadow: 0 2px 6px rgba(255,255,255,0.25);
   color: white !important;
 }
 
