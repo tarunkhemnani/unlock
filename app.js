@@ -63,24 +63,22 @@
     unlockOverlay.classList.add('show');
   }
 
-  // animate wrong attempt: dots turn red + shake; reset AFTER animation
+  // animate wrong attempt: dots shake horizontally; reset AFTER animation
   function animateWrongAttempt() {
     const dotsEl = document.getElementById('dots');
-    const lockEl = document.querySelector('.lockscreen');
     if (!dotsEl) {
       reset();
       return;
     }
 
-    const DURATION = 620; // must match CSS animation duration
+    const DURATION = 620; // must match CSS animation duration (ms)
 
+    // only animate dots container (no screen shake, no red flash)
     dotsEl.classList.add('wrong');
-    lockEl && lockEl.classList.add('shake');
 
-    // remove classes and clear input after animation ends
+    // remove class and clear input after animation ends
     setTimeout(() => {
       dotsEl.classList.remove('wrong');
-      lockEl && lockEl.classList.remove('shake');
       reset();
     }, DURATION + 20);
   }
