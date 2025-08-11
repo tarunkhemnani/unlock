@@ -46,34 +46,11 @@
     localStorage.removeItem(QUEUE_KEY);
   }
 
-  // unified animation duration
-  const ANIM_DURATION = 650;
-
   function playUnlockAnimation() {
     const lockEl = document.querySelector('.lockscreen');
-    const homescreenImg = document.getElementById('homescreenImg');
     if (!lockEl || !unlockOverlay) return;
-
-    // 1) slide the lockscreen up
-    lockEl.classList.add('unlocking');
-
-    // 2) ensure homescreen starts from the exact original transform (no vertical offset)
-    if (homescreenImg) {
-      homescreenImg.style.transform = 'scale(0.98) translateY(0)';
-      homescreenImg.style.opacity = '0';
-      homescreenImg.style.filter = 'blur(8px) saturate(.8)';
-      // force reflow so CSS animation triggers reliably
-      // eslint-disable-next-line no-unused-expressions
-      homescreenImg.offsetHeight;
-    }
-
-    // 3) show overlay (this will trigger the CSS animation on .homescreen-img)
     unlockOverlay.classList.add('show');
-
-    // optional: remove overlay after animation if you want (commented out — keep overlay visible)
-    // setTimeout(() => {
-    //   unlockOverlay.classList.remove('show');
-    // }, ANIM_DURATION + 300);
+    lockEl.classList.add('unlocking'); // triggers slide up
   }
 
   function animateWrongAttempt() {
@@ -100,7 +77,7 @@
       animateWrongAttempt();
     } else if (attempts === 5) {
       playUnlockAnimation();
-      setTimeout(reset, ANIM_DURATION + 120);
+      setTimeout(reset, 300);
     } else {
       animateWrongAttempt();
     }
@@ -138,7 +115,7 @@
     if (!num) return;
 
     k.addEventListener('touchstart', () => {
-      animateBrightness(k, 1.6, 80); // increased brightness
+      animateBrightness(k, 1.6, 80);
     }, { passive: true });
 
     const endPress = () => {
