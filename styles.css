@@ -111,7 +111,7 @@ html, body {
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
 
-  border: none; /* removed border per request */
+  border: none;
   color: white;
   font-size: 32px;
   cursor: pointer;
@@ -223,75 +223,8 @@ html, body {
 
 /* ---------------- wrong passcode animation ---------------- */
 /* Faster-feeling oscillations but slightly longer overall (700ms) */
-/* More steps -> feels snappier at the start while running a bit longer */
 @keyframes passShake {
   0%   { transform: translateX(0); }
   6%   { transform: translateX(-20px); }
-  14%  { transform: translateX(16px); }
-  24%  { transform: translateX(-14px); }
-  36%  { transform: translateX(12px); }
-  52%  { transform: translateX(-8px); }
-  72%  { transform: translateX(6px); }
-  88%  { transform: translateX(-3px); }
-  100% { transform: translateX(0); }
-}
-
-/* apply shake to dots container only; duration increased to 700ms */
-.dots.wrong {
-  animation: passShake 700ms cubic-bezier(.36,.07,.19,.97);
-  transform-origin: center;
-  will-change: transform;
-}
-/* ---------- Add/replace these blocks in styles.css ---------- */
-
-/* key pressed glow + scale (iPhone-like) */
-.key.pressed {
-  background: rgba(255,255,255,0.18);        /* subtle white fill */
-  transform: scale(1.04);                    /* slight pop */
-  box-shadow:
-    0 14px 30px rgba(0,0,0,0.45),            /* outer shadow for depth */
-    0 0 24px rgba(255,255,255,0.14) inset;   /* inner soft white glow */
-  transition: transform 140ms cubic-bezier(.2,.9,.3,1),
-              box-shadow 140ms ease,
-              background 140ms ease;
-  z-index: 3; /* sit above background */
-}
-
-/* keep :active as fallback for very short taps */
-.key:active { transform: scale(.995); }
-
-/* numeric transient popup that appears above pressed key */
-.key-pop {
-  position: absolute;
-  pointer-events: none;
-  display: inline-block;
-  transform-origin: center bottom;
-  padding: 6px 10px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.06);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.45), 0 2px 10px rgba(255,255,255,0.06) inset;
-  color: #fff;
-  font-weight: 700;
-  font-size: 46px;
-  line-height: 1;
-  transform: translate(-50%, -30%) scale(.9);
-  opacity: 0;
-  transition: transform 160ms cubic-bezier(.2,.9,.3,1), opacity 160ms ease;
-  z-index: 9998;
-}
-
-/* visible state */
-.key-pop.show {
-  transform: translate(-50%, -60%) scale(1);
-  opacity: 1;
-}
-
-/* small tweak so tiny keys don't overflow the popup */
-@media (max-width: 360px) {
-  .key-pop { font-size: 36px; padding: 4px 8px; border-radius: 10px; }
-}
-
-/* NOTE: no red flash and no screen shake in this file */
+  14%  { transform: translat
 
