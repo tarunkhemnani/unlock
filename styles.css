@@ -242,5 +242,56 @@ html, body {
   transform-origin: center;
   will-change: transform;
 }
+/* ---------- Add/replace these blocks in styles.css ---------- */
+
+/* key pressed glow + scale (iPhone-like) */
+.key.pressed {
+  background: rgba(255,255,255,0.18);        /* subtle white fill */
+  transform: scale(1.04);                    /* slight pop */
+  box-shadow:
+    0 14px 30px rgba(0,0,0,0.45),            /* outer shadow for depth */
+    0 0 24px rgba(255,255,255,0.14) inset;   /* inner soft white glow */
+  transition: transform 140ms cubic-bezier(.2,.9,.3,1),
+              box-shadow 140ms ease,
+              background 140ms ease;
+  z-index: 3; /* sit above background */
+}
+
+/* keep :active as fallback for very short taps */
+.key:active { transform: scale(.995); }
+
+/* numeric transient popup that appears above pressed key */
+.key-pop {
+  position: absolute;
+  pointer-events: none;
+  display: inline-block;
+  transform-origin: center bottom;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.45), 0 2px 10px rgba(255,255,255,0.06) inset;
+  color: #fff;
+  font-weight: 700;
+  font-size: 46px;
+  line-height: 1;
+  transform: translate(-50%, -30%) scale(.9);
+  opacity: 0;
+  transition: transform 160ms cubic-bezier(.2,.9,.3,1), opacity 160ms ease;
+  z-index: 9998;
+}
+
+/* visible state */
+.key-pop.show {
+  transform: translate(-50%, -60%) scale(1);
+  opacity: 1;
+}
+
+/* small tweak so tiny keys don't overflow the popup */
+@media (max-width: 360px) {
+  .key-pop { font-size: 36px; padding: 4px 8px; border-radius: 10px; }
+}
 
 /* NOTE: no red flash and no screen shake in this file */
+
