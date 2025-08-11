@@ -63,7 +63,7 @@
     unlockOverlay.classList.add('show');
   }
 
-  // animate wrong attempt: dots shake horizontally; reset AFTER animation
+  // animate wrong attempt: dots shake horizontally; reset WHEN shaking starts
   function animateWrongAttempt() {
     const dotsEl = document.getElementById('dots');
     if (!dotsEl) {
@@ -71,15 +71,18 @@
       return;
     }
 
-    const DURATION = 620; // must match CSS animation duration (ms)
+    const DURATION = 700; // must match CSS animation duration (ms)
 
-    // only animate dots container (no screen shake, no red flash)
+    // add the shake class
     dotsEl.classList.add('wrong');
 
-    // remove class and clear input after animation ends
+    // reset dots immediately when shake starts so they clear while shaking
+    reset();
+
+    // remove class after animation ends
     setTimeout(() => {
       dotsEl.classList.remove('wrong');
-      reset();
+      // no second reset needed (already reset at start)
     }, DURATION + 20);
   }
 
