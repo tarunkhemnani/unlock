@@ -3,6 +3,8 @@
   --gap-x: 28px;
   --gap-y: 18px;
   --safe-bottom: env(safe-area-inset-bottom);
+  --app-icon-size: 68px;
+  --icons-accent: rgba(255,255,255,0.95);
 }
 
 html, body {
@@ -184,6 +186,7 @@ html, body {
   transform: scale(0.98);
   opacity: 0;
   filter: blur(4px) saturate(0.95);
+  transition: opacity 420ms ease, transform 420ms cubic-bezier(.2,.8,.2,1), filter 420ms ease;
 }
 .unlock-overlay.show {
   display: flex;
@@ -192,17 +195,114 @@ html, body {
 .unlock-overlay.show .homescreen-img {
   animation: homescreenReveal 650ms cubic-bezier(.2,.8,.2,1) forwards;
 }
-@keyframes homescreenReveal {
-  0%   { transform: scale(0.98); opacity: 0; filter: blur(8px) saturate(.8); }
-  60%  { transform: scale(1.02); opacity: 1; filter: blur(1px) saturate(1.05); }
-  100% { transform: scale(1);    opacity: 1; filter: blur(0) saturate(1); }
+
+/* curtain */
+.curtain {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 60%;
+  background: linear-gradient(180deg, rgba(0,0,0,0.06), rgba(0,0,0,0.5) 65%, rgba(0,0,0,0.95));
+  z-index: 9992;
+  transform: translateY(0%);
+  box-shadow: 0 -20px 60px rgba(0,0,0,0.6) inset, 0 12px 48px rgba(0,0,0,0.5);
+  will-change: transform, opacity;
+  pointer-events: none;
+  border-bottom-left-radius: 40px;
+  border-bottom-right-radius: 40px;
 }
+
+/* app grid & icons */
+.app-grid {
+  position: absolute;
+  inset: 12% 6% 10% 6%;
+  z-index: 9993;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: var(--app-icon-size);
+  gap: 18px;
+  align-content: start;
+  justify-items: center;
+  pointer-events: none;
+}
+
+/* single icon */
+.app-icon {
+  width: var(--app-icon-size);
+  height: var(--app-icon-size);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+  backdrop-filter: blur(6px) saturate(1.1);
+  -webkit-backdrop-filter: blur(6px) saturate(1.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--icons-accent);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.6), 0 2px 4px rgba(255,255,255,0.02) inset;
+  transform: translateY(24px) scale(0.92);
+  opacity: 0;
+  filter: blur(6px) saturate(.9) contrast(.98);
+  will-change: transform, opacity, filter;
+  user-select: none;
+}
+
+/* small inner glyph to mimic an app image */
+.app-icon .glyph {
+  width: 64%;
+  height: 64%;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
+  opacity: 0.95;
+  box-shadow: inset 0 -6px 10px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* animations: curtain up + icons pop */
+@keyframes curtainUp {
+  0% { transform: translateY(0%); opacity: 1; filter: blur(2px); }
+  48% { transform: translateY(-58%); opacity: 1; filter: blur(1px); }
+  80% { transform: translateY(-102%); opacity: 0.96; filter: blur(0.5px); }
+  100% { transform: translateY(-110%); opacity: 0; filter: blur(0); }
+}
+
+@keyframes iconPop {
+  0% { transform: translateY(36px) scale(0.86); opacity: 0; filter: blur(8px) saturate(.9); }
+  60% { transform: translateY(-6px) scale(1.06); opacity: 1; filter: blur(1px) saturate(1.02); }
+  100% { transform: translateY(0px) scale(1); opacity: 1; filter: blur(0) saturate(1); }
+}
+
+/* stagger control via inline style -- default fallback */
+.app-icon.animate {
+  animation: iconPop 620ms cubic-bezier(.2,.9,.24,1) forwards;
+}
+
+/* subtle parallax / scale on homescreen while revealing apps */
+.unlock-overlay.reveal .homescreen-img {
+  transform-origin: center;
+  animation: homescreenReveal 720ms cubic-bezier(.2,.8,.2,1) forwards;
+  filter: blur(5px) saturate(.9);
+}
+
+/* trigger curtain animation */
+.unlock-overlay.reveal .curtain {
+  animation: curtainUp 680ms cubic-bezier(.22,.9,.2,1) forwards;
+}
+
+/* icon stagger style via CSS variables set inline by JS */
+.app-icon[data-delay] {
+  animation-delay: calc(var(--delay, 0ms));
+}
+
+/* slight final polish for unlocking container */
 .lockscreen.unlocking {
   transition: transform 450ms cubic-bezier(.2,.8,.2,1), opacity 450ms ease-in;
   transform: scale(0.98);
   opacity: 0;
 }
 
+/* pass shake */
 @keyframes passShake {
   0%   { transform: translateX(0); }
   6%   { transform: translateX(-20px); }
@@ -218,4 +318,10 @@ html, body {
   animation: passShake 700ms cubic-bezier(.36,.07,.19,.97);
   transform-origin: center;
   will-change: transform;
+}
+
+/* small responsive tweak */
+@media (max-width: 420px) {
+  :root { --app-icon-size: 60px; }
+  .app-grid { inset: 18% 6% 12% 6%; }
 }
