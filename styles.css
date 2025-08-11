@@ -5,6 +5,10 @@
   --gap-y: 18px;
   --safe-bottom: env(safe-area-inset-bottom);
 }
+/* Prevent default browser double-tap/pinch hints — makes taps act like app interactions */
+html, body {
+  touch-action: manipulation; /* prefer single-finger gestures, reduce double-tap zoom */
+}
 
 /* base */
 html,body{
@@ -226,4 +230,5 @@ html,body{
   transform: scale(0.98);
   opacity: 0;
 }
+
 
