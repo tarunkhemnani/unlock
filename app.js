@@ -87,7 +87,6 @@
     }
   }
 
-  // Frame-perfect press animation
   function animateBrightness(el, target, duration) {
     let startTime;
     const initial = parseFloat(el.dataset.brightness || "1");
@@ -116,11 +115,11 @@
     if (!num) return;
 
     k.addEventListener('touchstart', () => {
-      animateBrightness(k, 1.45, 80); // ramp up
+      animateBrightness(k, 1.6, 80); // increased brightness
     }, { passive: true });
 
     const endPress = () => {
-      animateBrightness(k, 1, 100); // ramp down
+      animateBrightness(k, 1, 100);
     };
     k.addEventListener('touchend', endPress);
     k.addEventListener('touchcancel', endPress);
