@@ -114,14 +114,6 @@ html, body {
 
   position: relative;
   z-index: 2;
-
-  transition: filter 0.1s ease-out, background 0.1s ease-out;
-}
-
-/* brightness increase on press */
-.key.pressed {
-  filter: brightness(1.45);
-  transition: filter 0.08s ease-out;
 }
 
 .key.empty {
