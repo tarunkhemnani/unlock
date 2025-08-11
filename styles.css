@@ -198,17 +198,16 @@ html, body {
   100% { transform: scale(1);    opacity: 1; filter: blur(0) saturate(1); }
 }
 
-/* ---------------------------
-   REPLACED: lockscreen unlocking
-   (Slide-up animation only)
-   --------------------------- */
+/* -----------------------------
+   SLIDE-UP unlock animation
+   Replaces previous scale/fade behavior
+   ----------------------------- */
 .lockscreen.unlocking {
   animation: lockscreenSlideUp 650ms cubic-bezier(.25,.8,.25,1) forwards;
-  /* hint to the browser for smoother animation */
   will-change: transform, opacity, filter;
 }
 
-/* Slide-up keyframes: pushes the lockscreen up while slightly blurring/fading it */
+/* Slide-up keyframes: push the lockscreen up, add subtle blur & fade */
 @keyframes lockscreenSlideUp {
   0% {
     transform: translateY(0);
