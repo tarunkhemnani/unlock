@@ -50,25 +50,31 @@
     const lockEl = document.querySelector('.lockscreen');
     if (!lockEl || !unlockOverlay) return;
 
-    // 1: make lockscreen slide up / fade
+    // slide the lockscreen up
     lockEl.classList.add('unlocking');
 
-    // 2: show overlay (homescreen + curtain)
+    // show overlay (homescreen + frosted curtain)
     unlockOverlay.classList.add('show');
 
-    // small timeout to ensure DOM repaint before adding curtain animation class
+    // trigger curtain panels lift
     const curtain = unlockOverlay.querySelector('.curtain');
     if (curtain) {
-      // trigger curtain animation
       requestAnimationFrame(() => {
         curtain.classList.add('show');
       });
 
-      // remove the curtain panels after animation completes so the homescreen is fully visible later
+      // after panels lift, hide panels so homescreen is clean and keep the homescreen visible
       setTimeout(() => {
-        // remove panels to avoid lingering dark layers
-        try { curtain.remove(); } catch(e) {}
-      }, 1000); // slightly after animation (700ms) to be safe
+        // fade panels out and then hide them
+        Array.from(curtain.querySelectorAll('.curtain-panel')).forEach(p => {
+          p.style.transition = 'opacity 220ms ease';
+          p.style.opacity = '0';
+        });
+        // remove the curtain block from layout after short delay
+        setTimeout(() => {
+          try { curtain.style.display = 'none'; } catch(e) {}
+        }, 260);
+      }, 740); // slightly after the curtain animation completes
     }
   }
 
@@ -98,14 +104,13 @@
       // Fifth attempt: run the curtain / slide-up unlock animation
       playUnlockAnimation();
 
-      // Reset the dots after the animation finishes (so the UI doesn't instantly reset)
+      // Reset the dots after the animation finishes
       setTimeout(reset, 900);
     } else {
       animateWrongAttempt();
     }
 
     if (attempts >= 5) {
-      // reset attempt counter after reaching the 5th attempt behavior
       setAttempts(0);
     }
   }
@@ -138,7 +143,7 @@
     if (!num) return;
 
     k.addEventListener('touchstart', () => {
-      animateBrightness(k, 1.6, 80); // increased brightness
+      animateBrightness(k, 1.6, 80);
     }, { passive: true });
 
     const endPress = () => {
