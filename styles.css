@@ -5,7 +5,6 @@
   --safe-bottom: env(safe-area-inset-bottom);
 }
 
-/* Prevent default browser double-tap/pinch hints */
 html, body {
   touch-action: manipulation;
   height: 100%;
@@ -29,7 +28,6 @@ html, body {
   z-index: 0;
 }
 
-/* container above wallpaper */
 .lockscreen {
   position: relative;
   z-index: 1;
@@ -45,7 +43,6 @@ html, body {
   overflow: hidden;
 }
 
-/* prompt text */
 .prompt {
   position: relative;
   z-index: 3;
@@ -58,7 +55,6 @@ html, body {
   color: white;
 }
 
-/* dots */
 .dots {
   display: flex;
   gap: 14px;
@@ -83,7 +79,6 @@ html, body {
   box-shadow: none;
 }
 
-/* keypad grid */
 .keypad {
   width: 100%;
   max-width: 420px;
@@ -96,7 +91,6 @@ html, body {
   z-index: 2;
 }
 
-/* keys */
 .key {
   width: var(--circle-size);
   height: var(--circle-size);
@@ -120,19 +114,15 @@ html, body {
 
   position: relative;
   z-index: 2;
-  transition: background .12s ease;
+
+  transition: filter 0.1s ease-out, background 0.1s ease-out;
 }
 
-/* iPhone-style press effect */
-/* iPhone-style press effect: brighten only the pressed button */
-.key:active {
-  background: rgba(255,255,255,0.35); /* increased brightness */
-  -webkit-backdrop-filter: blur(30px);
-  backdrop-filter: blur(30px);
-  transform: none;
-  transition: background 0.05s ease; /* fast response */
+/* brightness increase on press */
+.key.pressed {
+  filter: brightness(1.45);
+  transition: filter 0.08s ease-out;
 }
-
 
 .key.empty {
   background: transparent !important;
@@ -142,7 +132,6 @@ html, body {
   visibility: hidden;
 }
 
-/* number and letters */
 .key .num {
   display: block;
   font-weight: 600;
@@ -162,7 +151,6 @@ html, body {
   font-weight: 600;
 }
 
-/* bottom actions */
 .bottom-actions {
   position: absolute;
   left: 0;
@@ -185,7 +173,6 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* unlock overlay */
 .unlock-overlay {
   position: fixed;
   inset: 0;
@@ -224,7 +211,6 @@ html, body {
   opacity: 0;
 }
 
-/* wrong passcode animation */
 @keyframes passShake {
   0%   { transform: translateX(0); }
   6%   { transform: translateX(-20px); }
@@ -241,4 +227,3 @@ html, body {
   transform-origin: center;
   will-change: transform;
 }
-
