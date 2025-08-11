@@ -16,8 +16,8 @@ html, body {
   -webkit-text-size-adjust: 100%;
 }
 
-/* wallpaper fixed layer */
-.lockscreen::before {
+/* wallpaper fixed layer — moved to body so transforms on .lockscreen won't affect it */
+body::before {
   content: "";
   position: fixed;
   inset: 0;
@@ -26,8 +26,12 @@ html, body {
   background-position: center;
   background-repeat: no-repeat;
   z-index: 0;
+  pointer-events: none;
+  /* ensure it's behind everything but above the page background */
+  background-attachment: fixed;
 }
 
+/* keep .lockscreen above the wallpaper */
 .lockscreen {
   position: relative;
   z-index: 1;
@@ -198,32 +202,15 @@ html, body {
   100% { transform: scale(1);    opacity: 1; filter: blur(0) saturate(1); }
 }
 
-/* -----------------------------
-   SLIDE-UP unlock animation
-   Replaces previous scale/fade behavior
-   ----------------------------- */
+/* Slide-up unlock animation (applied to .lockscreen — wallpaper is no longer inside it) */
 .lockscreen.unlocking {
   animation: lockscreenSlideUp 650ms cubic-bezier(.25,.8,.25,1) forwards;
   will-change: transform, opacity, filter;
 }
-
-/* Slide-up keyframes: push the lockscreen up, add subtle blur & fade */
 @keyframes lockscreenSlideUp {
-  0% {
-    transform: translateY(0);
-    filter: blur(0px);
-    opacity: 1;
-  }
-  60% {
-    transform: translateY(-40%);
-    filter: blur(2px);
-    opacity: 0.95;
-  }
-  100% {
-    transform: translateY(-100%);
-    filter: blur(6px);
-    opacity: 0;
-  }
+  0%   { transform: translateY(0); filter: blur(0px); opacity: 1; }
+  60%  { transform: translateY(-40%); filter: blur(2px); opacity: 0.95; }
+  100% { transform: translateY(-100%); filter: blur(4px); opacity: 0; }
 }
 
 /* Wrong attempt shake */
