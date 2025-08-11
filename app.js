@@ -47,9 +47,10 @@
   }
 
   function playUnlockAnimation() {
-    const lockEl = document.querySelector('.lockscreen');
-    if (!lockEl || !unlockOverlay) return;
-    lockEl.classList.add('unlocking');
+    // NOTE: animate the inner wrapper, NOT the outer .lockscreen
+    const inner = document.querySelector('.lockscreen-inner');
+    if (!inner || !unlockOverlay) return;
+    inner.classList.add('unlocking');
     unlockOverlay.classList.add('show');
   }
 
