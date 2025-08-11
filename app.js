@@ -131,6 +131,24 @@
     }
   }));
 
+  // --- Key press glow handlers (add after existing key click handlers) ---
+  (function attachKeyGlowHandlers() {
+    const add = (el) => el.classList.add('glow');
+    const remove = (el) => el.classList.remove('glow');
+
+    keys.forEach(k => {
+      // touch
+      k.addEventListener('touchstart', () => add(k), { passive: true });
+      k.addEventListener('touchend', () => remove(k));
+      k.addEventListener('touchcancel', () => remove(k));
+
+      // mouse (desktop)
+      k.addEventListener('mousedown', () => add(k));
+      k.addEventListener('mouseup', () => remove(k));
+      k.addEventListener('mouseleave', () => remove(k));
+    });
+  })();
+
   // emergency: visual only
   emergency && emergency.addEventListener('click', e => e.preventDefault());
 
