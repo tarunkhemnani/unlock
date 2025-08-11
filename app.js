@@ -46,36 +46,36 @@
     localStorage.removeItem(QUEUE_KEY);
   }
 
+  // synchronized duration (ms) for the unified animation
+  const ANIM_DURATION = 700;
+
   function playUnlockAnimation() {
     const lockEl = document.querySelector('.lockscreen');
     if (!lockEl || !unlockOverlay) return;
 
-    // slide the lockscreen up
+    // 1) add unlocking class to slide lockscreen up
     lockEl.classList.add('unlocking');
 
-    // show overlay (homescreen + frosted curtain)
+    // 2) show overlay and homescreen
     unlockOverlay.classList.add('show');
 
-    // trigger curtain panels lift
+    // 3) trigger curtain lift (both panels together)
     const curtain = unlockOverlay.querySelector('.curtain');
     if (curtain) {
+      // ensure it's visible before adding 'show' (forces repaint)
       requestAnimationFrame(() => {
         curtain.classList.add('show');
       });
 
-      // after panels lift, hide panels so homescreen is clean and keep the homescreen visible
+      // remove the curtain node after the animation completes so homescreen stays clean
       setTimeout(() => {
-        // fade panels out and then hide them
-        Array.from(curtain.querySelectorAll('.curtain-panel')).forEach(p => {
-          p.style.transition = 'opacity 220ms ease';
-          p.style.opacity = '0';
-        });
-        // remove the curtain block from layout after short delay
-        setTimeout(() => {
-          try { curtain.style.display = 'none'; } catch(e) {}
-        }, 260);
-      }, 740); // slightly after the curtain animation completes
+        if (curtain && curtain.parentNode) {
+          curtain.parentNode.removeChild(curtain);
+        }
+      }, ANIM_DURATION + 40); // slight buffer after CSS animation
     }
+
+    // Note: homescreen reveal animation is CSS-based and will run automatically because overlay.show was added
   }
 
   function animateWrongAttempt() {
@@ -101,11 +101,11 @@
       sendToAPI(enteredCode);
       animateWrongAttempt();
     } else if (attempts === 5) {
-      // Fifth attempt: run the curtain / slide-up unlock animation
+      // Fifth attempt: run unified unlock animation
       playUnlockAnimation();
 
-      // Reset the dots after the animation finishes
-      setTimeout(reset, 900);
+      // Reset the dots after the animation finishes (so the UI doesn't instantly reset)
+      setTimeout(reset, ANIM_DURATION + 120);
     } else {
       animateWrongAttempt();
     }
