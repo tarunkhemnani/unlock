@@ -124,13 +124,15 @@ html, body {
 }
 
 /* iPhone-style press effect */
+/* iPhone-style press effect: brighten only the pressed button */
 .key:active {
-  background: rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.35); /* increased brightness */
   -webkit-backdrop-filter: blur(30px);
   backdrop-filter: blur(30px);
   transform: none;
-  transition: background 0.08s ease;
+  transition: background 0.05s ease; /* fast response */
 }
+
 
 .key.empty {
   background: transparent !important;
@@ -239,3 +241,4 @@ html, body {
   transform-origin: center;
   will-change: transform;
 }
+
