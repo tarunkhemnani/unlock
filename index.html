@@ -24,38 +24,44 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Wallpaper layer moved completely OUTSIDE the lockscreen so transforms won't affect it -->
+  <div class="wallpaper-layer" aria-hidden="true"></div>
+
   <div class="lockscreen" aria-live="polite">
-    <div class="prompt">Swipe up for Face ID or<br>Enter Passcode</div>
+    <!-- INNER wrapper: we'll animate this instead of .lockscreen -->
+    <div class="lockscreen-inner">
+      <div class="prompt">Swipe up for Face ID or<br>Enter Passcode</div>
 
-    <!-- 4 dots (match MAX = 4) -->
-    <div class="dots" id="dots" aria-hidden="true">
-      <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
-    </div>
+      <!-- 4 dots (match MAX = 4) -->
+      <div class="dots" id="dots" aria-hidden="true">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
 
-    <!-- keypad -->
-    <div class="keypad" id="keypad" role="group" aria-label="Passcode keypad">
-      <button class="key" data-num="1" type="button"><span class="num">1</span><span class="letters"></span></button>
-      <button class="key" data-num="2" type="button"><span class="num">2</span><span class="letters">ABC</span></button>
-      <button class="key" data-num="3" type="button"><span class="num">3</span><span class="letters">DEF</span></button>
+      <!-- keypad -->
+      <div class="keypad" id="keypad" role="group" aria-label="Passcode keypad">
+        <button class="key" data-num="1" type="button"><span class="num">1</span><span class="letters"></span></button>
+        <button class="key" data-num="2" type="button"><span class="num">2</span><span class="letters">ABC</span></button>
+        <button class="key" data-num="3" type="button"><span class="num">3</span><span class="letters">DEF</span></button>
 
-      <button class="key" data-num="4" type="button"><span class="num">4</span><span class="letters">GHI</span></button>
-      <button class="key" data-num="5" type="button"><span class="num">5</span><span class="letters">JKL</span></button>
-      <button class="key" data-num="6" type="button"><span class="num">6</span><span class="letters">MNO</span></button>
+        <button class="key" data-num="4" type="button"><span class="num">4</span><span class="letters">GHI</span></button>
+        <button class="key" data-num="5" type="button"><span class="num">5</span><span class="letters">JKL</span></button>
+        <button class="key" data-num="6" type="button"><span class="num">6</span><span class="letters">MNO</span></button>
 
-      <button class="key" data-num="7" type="button"><span class="num">7</span><span class="letters">PQRS</span></button>
-      <button class="key" data-num="8" type="button"><span class="num">8</span><span class="letters">TUV</span></button>
-      <button class="key" data-num="9" type="button"><span class="num">9</span><span class="letters">WXYZ</span></button>
+        <button class="key" data-num="7" type="button"><span class="num">7</span><span class="letters">PQRS</span></button>
+        <button class="key" data-num="8" type="button"><span class="num">8</span><span class="letters">TUV</span></button>
+        <button class="key" data-num="9" type="button"><span class="num">9</span><span class="letters">WXYZ</span></button>
 
-      <!-- spacer / 0 / spacer -->
-      <div class="key empty" aria-hidden="true"></div>
-      <button class="key" data-num="0" type="button"><span class="num">0</span><span class="letters"></span></button>
-      <div class="key empty" aria-hidden="true"></div>
-    </div>
+        <!-- spacer / 0 / spacer -->
+        <div class="key empty" aria-hidden="true"></div>
+        <button class="key" data-num="0" type="button"><span class="num">0</span><span class="letters"></span></button>
+        <div class="key empty" aria-hidden="true"></div>
+      </div>
 
-    <!-- bottom actions -->
-    <div class="bottom-actions">
-      <button class="action" id="emergency" type="button">Emergency</button>
-      <button class="action" id="cancel" type="button">Cancel</button>
+      <!-- bottom actions -->
+      <div class="bottom-actions">
+        <button class="action" id="emergency" type="button">Emergency</button>
+        <button class="action" id="cancel" type="button">Cancel</button>
+      </div>
     </div>
   </div>
 
