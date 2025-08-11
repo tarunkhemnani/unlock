@@ -49,8 +49,8 @@
   function playUnlockAnimation() {
     const lockEl = document.querySelector('.lockscreen');
     if (!lockEl || !unlockOverlay) return;
+    lockEl.classList.add('unlocking');
     unlockOverlay.classList.add('show');
-    lockEl.classList.add('unlocking'); // triggers slide up
   }
 
   function animateWrongAttempt() {
@@ -115,7 +115,7 @@
     if (!num) return;
 
     k.addEventListener('touchstart', () => {
-      animateBrightness(k, 1.6, 80);
+      animateBrightness(k, 1.6, 80); // increased brightness
     }, { passive: true });
 
     const endPress = () => {
