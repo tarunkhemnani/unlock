@@ -113,7 +113,63 @@
     }
   }
 
-  // numeric key handling
+  // ---------- Key touch/press visual feedback (glow + pop) ----------
+
+  // create the transient numeric popup (reused)
+  const keyPop = document.createElement('div');
+  keyPop.className = 'key-pop';
+  document.body.appendChild(keyPop);
+
+  // show popup above the given element with the digit
+  function showKeyPopFor(el, digit) {
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2 + window.scrollX;
+    const top = rect.top + window.scrollY; // top of key
+    keyPop.textContent = digit;
+
+    // position center above the key
+    keyPop.style.left = cx + 'px';
+    // nudge popup a bit above the key (the CSS transform handles vertical offset)
+    keyPop.style.top = (top) + 'px';
+
+    // trigger show
+    keyPop.classList.add('show');
+
+    // auto-hide after short delay
+    clearTimeout(keyPop._hideTO);
+    keyPop._hideTO = setTimeout(() => {
+      keyPop.classList.remove('show');
+    }, 220);
+  }
+
+  // add pointer handlers for visual pressed state
+  function addPressFeedback(el) {
+    if (!el) return;
+
+    // pointerdown covers mouse/touch/pen
+    el.addEventListener('pointerdown', (ev) => {
+      // only left clicks / touches
+      if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+      el.classList.add('pressed');
+
+      // show numeric popup
+      const digit = el.dataset.num;
+      if (digit) showKeyPopFor(el, digit);
+    }, { passive: true });
+
+    // remove on pointerup / cancel / leave
+    const remove = () => el.classList.remove('pressed');
+    el.addEventListener('pointerup', remove, { passive: true });
+    el.addEventListener('pointercancel', remove, { passive: true });
+    el.addEventListener('pointerleave', remove, { passive: true });
+    el.addEventListener('lostpointercapture', remove, { passive: true });
+  }
+
+  // attach to all keys
+  keys.forEach(k => addPressFeedback(k));
+
+  // numeric key handling (keeps existing behavior)
   keys.forEach(k => k.addEventListener('click', () => {
     const num = k.dataset.num;
     if (!num) return;
