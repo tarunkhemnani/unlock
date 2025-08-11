@@ -230,8 +230,25 @@ html,body{
   transform: scale(0.98);
   opacity: 0;
 }
+/* ----- wrong passcode animation ----- */
+/* dots horizontal shake */
+@keyframes passShake {
+  0%   { transform: translateX(0); }
+  10%  { transform: translateX(-10px); }
+  30%  { transform: translateX(8px); }
+  50%  { transform: translateX(-6px); }
+  70%  { transform: translateX(4px); }
+  90%  { transform: translateX(-2px); }
+  100% { transform: translateX(0); }
+}
+/* add the animation to the dots when wrong */
+.dots.wrong {
+  animation: passShake 620ms cubic-bezier(.36,.07,.19,.97);
+  transform-origin: center;
+}
 
-
+/* ensure dots keep layout while animating */
+.dots { will-change: transform; }
 
 
 
