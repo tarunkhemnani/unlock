@@ -106,71 +106,30 @@ html, body {
   align-items: center;
   justify-content: center;
 
-  /* frosted glass */
   background: rgba(255,255,255,0.07);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
 
-  border: none; /* removed border per request */
+  border: none;
   color: white;
   font-size: 32px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-
-  /* subtle outer shadow only (no inset) */
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.35);
 
   position: relative;
   z-index: 2;
-  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+  transition: background .12s ease;
 }
 
-/* subtle active background (no pop) */
+/* iPhone-style press effect */
 .key:active {
-  transform: none;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.22);
   -webkit-backdrop-filter: blur(30px);
   backdrop-filter: blur(30px);
-}
-
-/* glow layer — NO bright centre; gentle, soft rim/backlight across the whole key */
-.key::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  pointer-events: none;
-
-  /* center kept transparent; soft outer glow */
-  background: radial-gradient(circle at 50% 40%,
-                              rgba(255,255,255,0.00) 0%,
-                              rgba(255,255,255,0.01) 28%,
-                              rgba(255,255,255,0.03) 52%,
-                              rgba(255,255,255,0.045) 76%,
-                              rgba(255,255,255,0.06) 100%);
-  opacity: 0;
-  transition: opacity .14s cubic-bezier(.2,.9,.2,1), transform .14s ease;
-  transform: scale(1.02); /* slightly larger so glow sits around the rim */
-  will-change: opacity, transform;
-}
-
-/* very gentle, whole-button glow when active */
-.key.glow {
-  background: rgba(255,255,255,0.06);
-  box-shadow: 0 6px 18px rgba(255,255,255,0.04), 0 1px 4px rgba(0,0,0,0.24);
-}
-
-/* show the subdued outer bloom */
-.key.glow::after {
-  opacity: 1;
-  transform: scale(1.0);
-}
-
-/* much softer number glow */
-.key.glow .num {
-  text-shadow: 0 2px 6px rgba(255,255,255,0.25);
-  color: white !important;
+  transform: none;
+  transition: background 0.08s ease;
 }
 
 .key.empty {
@@ -206,7 +165,7 @@ html, body {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(var(--safe-bottom) + 16px); /* slightly raised */
+  bottom: calc(var(--safe-bottom) + 16px);
   display:flex;
   justify-content: space-between;
   padding: 0 28px;
@@ -218,7 +177,7 @@ html, body {
   border: none;
   color: white;
   font-size: 16px;
-  font-weight: 400; /* non-bold */
+  font-weight: 400;
   opacity: 0.98;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -263,9 +222,7 @@ html, body {
   opacity: 0;
 }
 
-/* ---------------- wrong passcode animation ---------------- */
-/* Faster-feeling oscillations but slightly longer overall (700ms) */
-/* More steps -> feels snappier at the start while running a bit longer */
+/* wrong passcode animation */
 @keyframes passShake {
   0%   { transform: translateX(0); }
   6%   { transform: translateX(-20px); }
@@ -277,12 +234,8 @@ html, body {
   88%  { transform: translateX(-3px); }
   100% { transform: translateX(0); }
 }
-
-/* apply shake to dots container only; duration increased to 700ms */
 .dots.wrong {
   animation: passShake 700ms cubic-bezier(.36,.07,.19,.97);
   transform-origin: center;
   will-change: transform;
 }
-
-/* NOTE: no red flash and no screen shake in this file */
