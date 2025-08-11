@@ -10,46 +10,56 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  /* Use the wallpaper as the body background as a fallback/primary source.
-     background-attachment: fixed helps ensure it stays pinned to viewport. */
   background-color: #000;
-  background-image: url('wallpaper.jpg');
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
 }
 
-/* Keep wallpaper available as a pseudo for layering if desired,
-   but the body background is the primary fix for the iOS issue. */
-body::before {
-  content: "";
+/* wallpaper layer - fixed & isolated */
+.wallpaper-layer {
   position: fixed;
   inset: 0;
-  /* keep this behind everything */
   z-index: 0;
   pointer-events: none;
+  background-image: url('wallpaper.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* Force its own composite layer (helps iOS repaint issues) */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* Keep .lockscreen above the wallpaper */
 .lockscreen {
   position: relative;
-  z-index: 1;
+  z-index: 2; /* above wallpaper-layer */
   height: 100svh;
   min-height: 100vh;
   width: 100%;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: calc(env(safe-area-inset-top) + 84px);
-  padding-bottom: calc(var(--safe-bottom) + 8px);
+  justify-content: center;
+  align-items: flex-start;
   box-sizing: border-box;
   overflow: hidden;
+  padding-top: calc(env(safe-area-inset-top) + 84px);
+  padding-bottom: calc(var(--safe-bottom) + 8px);
 }
 
+/* inner container — animate this instead of .lockscreen */
+.lockscreen-inner {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 3;
+  /* promote to its own layer so animation is smooth */
+  -webkit-transform: translateZ(0);
+}
+
+/* rest of styles unchanged but ensure z-index ordering is consistent */
 .prompt {
   position: relative;
   z-index: 3;
@@ -106,11 +116,9 @@ body::before {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-
   background: rgba(255,255,255,0.07);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
-
   border: none;
   color: white;
   font-size: 32px;
@@ -118,7 +126,6 @@ body::before {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.35);
-
   position: relative;
   z-index: 2;
 }
@@ -167,14 +174,9 @@ body::before {
   color: white;
   font-size: 16px;
   font-weight: 400;
-  opacity: 0.98;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }
 
-/* Unlock overlay MUST be fixed and cover the viewport entirely.
-   Make homescreen image fixed so it always fills viewport, unaffected
-   by transforms/motion of sibling elements. */
+/* Unlock overlay & homescreen preview - ensure fixed and on top */
 .unlock-overlay {
   position: fixed;
   inset: 0;
@@ -185,9 +187,6 @@ body::before {
   background: transparent;
   pointer-events: none;
 }
-
-/* make sure homescreen image is fixed and covers screen.
-   Using width/height 100vw/100vh avoids any visible black gaps. */
 .homescreen-img {
   position: fixed;
   top: 0;
@@ -199,11 +198,11 @@ body::before {
   transform: scale(0.98);
   opacity: 0;
   filter: blur(4px) saturate(0.95);
-  z-index: 10000; /* above everything */
+  z-index: 10000;
   pointer-events: none;
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
 }
-
-/* show the overlay and animate the homescreen image */
 .unlock-overlay.show {
   display: flex;
   pointer-events: auto;
@@ -217,15 +216,15 @@ body::before {
   100% { transform: scale(1);    opacity: 1; filter: blur(0) saturate(1); }
 }
 
-/* Slide-up unlock animation (applied to .lockscreen) */
-.lockscreen.unlocking {
+/* Slide up unlock animation applied to .lockscreen-inner (not the outer .lockscreen) */
+.lockscreen-inner.unlocking {
   animation: lockscreenSlideUp 650ms cubic-bezier(.25,.8,.25,1) forwards;
   will-change: transform, opacity, filter;
 }
 @keyframes lockscreenSlideUp {
   0%   { transform: translateY(0); filter: blur(0px); opacity: 1; }
   60%  { transform: translateY(-40%); filter: blur(2px); opacity: 0.95; }
-  100% { transform: translateY(-100%); filter: blur(4px); opacity: 0; }
+  100% { transform: translateY(-100%); filter: blur(6px); opacity: 0; }
 }
 
 /* Wrong attempt shake */
