@@ -27,7 +27,7 @@
   <div class="lockscreen" aria-live="polite">
     <div class="prompt">Swipe up for Face ID or<br>Enter Passcode</div>
 
-    <!-- 4 dots (match MAX = 4) -->
+    <!-- 4 dots -->
     <div class="dots" id="dots" aria-hidden="true">
       <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
     </div>
@@ -67,7 +67,6 @@
   </div>
 
   <script>
-    // register service worker (relative path) if present
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js').catch(()=>{});
     }
