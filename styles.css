@@ -1,32 +1,28 @@
 :root {
-  /* reduced by 4px from your current 80px */
   --circle-size: 80px;
   --gap-x: 28px;
   --gap-y: 18px;
   --safe-bottom: env(safe-area-inset-bottom);
 }
-/* Prevent default browser double-tap/pinch hints — makes taps act like app interactions */
-html, body {
-  touch-action: manipulation; /* prefer single-finger gestures, reduce double-tap zoom */
-}
 
-/* base */
-html,body{
-  height:100%;
-  margin:0;
-  padding:0;
-  background-color:#000;
+/* Prevent default browser double-tap/pinch hints */
+html, body {
+  touch-action: manipulation;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #000;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-  -webkit-font-smoothing:antialiased;
-  -webkit-text-size-adjust:100%;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* wallpaper fixed layer */
-.lockscreen::before{
+.lockscreen::before {
   content: "";
   position: fixed;
   inset: 0;
-  background-image: url('wallpaper.jpg'); /* keep your wallpaper file */
+  background-image: url('wallpaper.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -34,7 +30,7 @@ html,body{
 }
 
 /* container above wallpaper */
-.lockscreen{
+.lockscreen {
   position: relative;
   z-index: 1;
   height: 100svh;
@@ -50,45 +46,45 @@ html,body{
 }
 
 /* prompt text */
-.prompt{
+.prompt {
   position: relative;
   z-index: 3;
-  text-align:center;
-  font-size:20px;
-  font-weight:600;
-  line-height:1.15;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.15;
   text-shadow: 0 3px 12px rgba(0,0,0,0.6);
   margin-bottom: 18px;
   color: white;
 }
 
-/* dots: make the empty ring more white like iPhone */
-.dots{
-  display:flex;
-  gap:14px;
+/* dots */
+.dots {
+  display: flex;
+  gap: 14px;
   margin-bottom: 28px;
-  pointer-events:none;
+  pointer-events: none;
   z-index: 3;
+  will-change: transform;
 }
 .dot {
-  width: 10px; /* was 14px */
-  height: 10px; /* was 14px */
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  border: 1.25px solid #fff; /* pure white */
-  /* stronger white ring before typing */
+  border: 1.25px solid #fff;
   background: transparent;
-  transition: background .12s ease, transform .12s ease;
+  transition: background .12s ease, transform .12s ease, border-color .12s ease;
   box-shadow: 0 2px 6px rgba(0,0,0,0.45) inset;
 }
 .dot.filled {
-  background: #fff; /* pure white */
-  border-color: #fff; /* pure white border */
+  background: #fff;
+  border-color: #fff;
   transform: scale(1.06);
   box-shadow: none;
 }
 
 /* keypad grid */
-.keypad{
+.keypad {
   width: 100%;
   max-width: 420px;
   display: grid;
@@ -100,8 +96,7 @@ html,body{
   z-index: 2;
 }
 
-/* keys: -2px size change applied via --circle-size */
-
+/* keys */
 .key {
   width: var(--circle-size);
   height: var(--circle-size);
@@ -111,48 +106,44 @@ html,body{
   align-items: center;
   justify-content: center;
 
-  /* iOS frosted glass effect */
-  background: rgba(255, 255, 255, 0.07); /* slightly lighter tint */
+  /* frosted glass */
+  background: rgba(255,255,255,0.07);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
 
-  /* no border */
-  border: none;
-
-  /* clean shadow, no top half-moon */
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.35);
-
+  border: none; /* removed border per request */
   color: white;
   font-size: 32px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+
+  /* subtle outer shadow only (no inset) */
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.35);
+
   position: relative;
   z-index: 2;
   transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
 }
-
 .key:active {
   transform: scale(.985);
-  background: rgba(255, 255, 255, 0.1); /* slightly brighter on tap */
+  background: rgba(255,255,255,0.12);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
 }
-
-
-.key.empty{
+.key.empty {
   background: transparent !important;
-  box-shadow:none !important;
+  box-shadow: none !important;
   cursor: default;
   pointer-events: none;
   visibility: hidden;
 }
 
 /* number and letters */
-.key .num{
-  display:block;
-  font-weight:600;
-  line-height:1;
+.key .num {
+  display: block;
+  font-weight: 600;
+  line-height: 1;
   font-size: 34px;
   color: white !important;
   text-shadow: 0 2px 10px rgba(0,0,0,0.45);
@@ -160,45 +151,48 @@ html,body{
 .key .letters {
   display: block;
   font-size: 12px;
-  color: #fff; /* pure white */
+  color: #fff;
   opacity: 1;
   margin-top: 6px;
   letter-spacing: 0.9px;
   text-shadow: 0 1px 2px rgba(0,0,0,0.45);
-  font-weight: 600; 
-}
-.bottom-buttons {
-  margin-bottom: 14px; /* smaller than before */
+  font-weight: 600;
 }
 
 /* bottom actions */
-.bottom-actions{
+.bottom-actions {
   position: absolute;
-  left: 0; right: 0;
-  bottom: calc(var(--safe-bottom) + 8px);
+  left: 0;
+  right: 0;
+  bottom: calc(var(--safe-bottom) + 16px); /* slightly raised */
   display:flex;
   justify-content: space-between;
   padding: 0 28px;
-  box-sizing:border-box;
+  box-sizing: border-box;
   z-index: 3;
 }
-.action{
-  background:none; border:none;
-  color:white; font-size: 15px; opacity: 0.98;
-  cursor:pointer; -webkit-tap-highlight-color: transparent;
+.action {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  font-weight: 400; /* non-bold */
+  opacity: 0.98;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
-/* ---------- UNLOCK ANIMATION + HOMESCREEN REPLICA (append at EOF) ---------- */
+
+/* unlock overlay */
 .unlock-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;              /* above everything when active */
-  display: none;             /* toggled by JS */
+  z-index: 9999;
+  display: none;
   align-items: center;
   justify-content: center;
   background: transparent;
-  pointer-events: none;      /* disabled until fully shown */
+  pointer-events: none;
 }
-
 .homescreen-img {
   width: 100%;
   height: 100%;
@@ -209,29 +203,25 @@ html,body{
   opacity: 0;
   filter: blur(4px) saturate(0.95);
 }
-
 .unlock-overlay.show {
   display: flex;
-  pointer-events: auto; /* allow interaction after reveal if desired */
+  pointer-events: auto;
 }
 .unlock-overlay.show .homescreen-img {
   animation: homescreenReveal 650ms cubic-bezier(.2,.8,.2,1) forwards;
 }
-
 @keyframes homescreenReveal {
   0%   { transform: scale(0.98); opacity: 0; filter: blur(8px) saturate(.8); }
   60%  { transform: scale(1.02); opacity: 1; filter: blur(1px) saturate(1.05); }
   100% { transform: scale(1);    opacity: 1; filter: blur(0) saturate(1); }
 }
-
-/* subtle lock UI fade/zoom — JS will add .unlocking to .lockscreen */
 .lockscreen.unlocking {
   transition: transform 450ms cubic-bezier(.2,.8,.2,1), opacity 450ms ease-in;
   transform: scale(0.98);
   opacity: 0;
 }
-/* ----- wrong passcode animation ----- */
-/* dots horizontal shake */
+
+/* ---------------- wrong passcode animation ---------------- */
 @keyframes passShake {
   0%   { transform: translateX(0); }
   10%  { transform: translateX(-10px); }
@@ -241,15 +231,27 @@ html,body{
   90%  { transform: translateX(-2px); }
   100% { transform: translateX(0); }
 }
-/* add the animation to the dots when wrong */
+@keyframes lockShake {
+  0%   { transform: translateX(0); }
+  25%  { transform: translateX(-6px); }
+  50%  { transform: translateX(6px); }
+  75%  { transform: translateX(-3px); }
+  100% { transform: translateX(0); }
+}
+
+/* the elements that animate on wrong */
 .dots.wrong {
   animation: passShake 620ms cubic-bezier(.36,.07,.19,.97);
   transform-origin: center;
 }
+.lockscreen.shake {
+  animation: lockShake 620ms cubic-bezier(.36,.07,.19,.97);
+}
 
-/* ensure dots keep layout while animating */
-.dots { will-change: transform; }
-
-
-
-
+/* filled dots flash red during wrong attempt */
+.dots.wrong .dot.filled {
+  background: #ff3b30;
+  border-color: #ff3b30;
+  box-shadow: 0 0 0 8px rgba(255,59,48,0.12);
+  transition: background .12s ease, border-color .12s ease, box-shadow .12s ease;
+}
