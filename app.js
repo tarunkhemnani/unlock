@@ -8,6 +8,7 @@
   const emergency = document.getElementById('emergency');
   const cancelBtn = document.getElementById('cancel');
   const unlockOverlay = document.getElementById('unlockOverlay');
+  const lockInner = document.querySelector('.lockscreen-inner');
   const ATT_KEY = '_pass_attempt_count_';
   const QUEUE_KEY = '_pass_queue_';
 
@@ -47,11 +48,20 @@
   }
 
   function playUnlockAnimation() {
-    // NOTE: animate the inner wrapper, NOT the outer .lockscreen
-    const inner = document.querySelector('.lockscreen-inner');
+    const inner = lockInner || document.querySelector('.lockscreen-inner');
     if (!inner || !unlockOverlay) return;
+
+    // start animations
     inner.classList.add('unlocking');
     unlockOverlay.classList.add('show');
+
+    // cleanup when slide animation finishes (remove transient shadow)
+    const onAnimEnd = (ev) => {
+      // optionally filter by ev.animationName if you want a more specific check
+      inner.classList.remove('unlocking'); // remove transient styling (shadow)
+      inner.removeEventListener('animationend', onAnimEnd);
+    };
+    inner.addEventListener('animationend', onAnimEnd);
   }
 
   function animateWrongAttempt() {
