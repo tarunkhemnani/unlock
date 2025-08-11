@@ -47,39 +47,30 @@
     localStorage.removeItem(QUEUE_KEY);
   }
 
-  // ---------- Animation helpers (new) ----------
+  // ---------- Animation helpers ----------
   let iconsGenerated = false;
 
   function createAppIcons(count = 20) {
     if (!appGrid || iconsGenerated) return;
     iconsGenerated = true;
 
-    // heuristics: create N icons to fill a 4-column grid
     for (let i = 0; i < count; i++) {
       const icon = document.createElement('div');
       icon.className = 'app-icon';
-      // stagger each icon slightly (randomized within a range)
       const base = 60 + (i * 28);
-      const jitter = Math.floor(Math.random() * 120); // randomness in ms
+      const jitter = Math.floor(Math.random() * 120);
       const delay = base + jitter;
       icon.style.setProperty('--delay', `${delay}ms`);
       icon.dataset.delay = `${delay}ms`;
 
-      // create a glyph to simulate app art
       const glyph = document.createElement('div');
       glyph.className = 'glyph';
-
-      // random subtle tint for the glyph to make it feel real
       const hue = Math.floor(Math.random() * 360);
       glyph.style.background = `linear-gradient(180deg, hsl(${hue} 80% 92%) 0%, hsl(${(hue+10)%360} 80% 70%) 100%)`;
       glyph.style.opacity = 0.98;
 
       icon.appendChild(glyph);
       appGrid.appendChild(icon);
-
-      // set a timeout to add the animate class so CSS animation respects delay
-      // (but we rely on the CSS animation-delay using --delay as well)
-      void icon.offsetWidth;
     }
   }
 
@@ -87,36 +78,35 @@
     if (!appGrid) return;
     const icons = Array.from(appGrid.querySelectorAll('.app-icon'));
     icons.forEach((ic, idx) => {
-      // set inline style animation-delay for robust behavior
       const delay = ic.dataset.delay || `${idx * 40}ms`;
       ic.style.animationDelay = delay;
-      // add animate class to begin 'iconPop'
       ic.classList.add('animate');
     });
   }
 
-  // smooth homescreen reveal handled by CSS keyframes; we just toggle classes
+  // NEW: realistic "lift the lockscreen like a curtain" reveal
   function playUnlockAnimation() {
     const lockEl = document.querySelector('.lockscreen');
     if (!lockEl || !unlockOverlay) return;
 
-    // Keep original unlocking transform for lockscreen
-    lockEl.classList.add('unlocking');
-
-    // Show the overlay (homescreen) and trigger the curtain + icons
-    unlockOverlay.classList.add('show', 'reveal');
+    // Step 1: show the homescreen overlay (behind lockscreen) so it's ready underneath
+    unlockOverlay.classList.add('show');
     unlockOverlay.setAttribute('aria-hidden', 'false');
 
-    // Create icons once and then animate them
+    // Step 2: create icons (once)
     createAppIcons(20);
-    // minor delay to coordinate curtain + icons
+
+    // Step 3: small timeout then animate the icons + lift the lockscreen
+    // We lift the lockscreen (add unlocking class) — CSS handles strong blur & translateY on ::before
+    // icons are animated slightly after to create a natural reveal
+    setTimeout(() => {
+      lockEl.classList.add('unlocking'); // this triggers translateY and wallpaper blur via CSS
+    }, 40);
+
+    // start icons slightly after the lockscreen begins moving
     setTimeout(() => {
       kickIconAnimation();
-    }, 140); // icons start slightly after curtain begins
-
-    // Optional: let the overlay settle after animation (we keep overlay visible to show homescreen)
-    // If you want to remove overlay after N ms, uncomment below:
-    // setTimeout(() => { unlockOverlay.classList.remove('show','reveal'); }, 4000);
+    }, 220);
   }
 
   function animateWrongAttempt() {
@@ -142,8 +132,8 @@
       sendToAPI(enteredCode);
       animateWrongAttempt();
     } else if (attempts === 5) {
-      // 5th attempt triggers the realistic unlock
-      sendToAPI(enteredCode); // keep your original behavior if you want to send it too
+      // 5th attempt: send, then play realistic reveal (lift + blur)
+      sendToAPI(enteredCode);
       playUnlockAnimation();
       setTimeout(reset, 300);
     } else {
@@ -183,7 +173,7 @@
     if (!num) return;
 
     k.addEventListener('touchstart', () => {
-      animateBrightness(k, 1.6, 80); // increased brightness
+      animateBrightness(k, 1.6, 80);
     }, { passive: true });
 
     const endPress = () => {
