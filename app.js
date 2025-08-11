@@ -113,27 +113,7 @@
     }
   }
 
-  // ---------- Key touch/press visual feedback (glow only, no popup) ----------
-  function addPressFeedback(el) {
-    if (!el) return;
-
-    el.addEventListener('pointerdown', (ev) => {
-      // only left clicks / touches
-      if (ev.pointerType === 'mouse' && ev.button !== 0) return;
-      el.classList.add('pressed');
-    }, { passive: true });
-
-    const remove = () => el.classList.remove('pressed');
-    el.addEventListener('pointerup', remove, { passive: true });
-    el.addEventListener('pointercancel', remove, { passive: true });
-    el.addEventListener('pointerleave', remove, { passive: true });
-    el.addEventListener('lostpointercapture', remove, { passive: true });
-  }
-
-  // attach to all keys
-  keys.forEach(k => addPressFeedback(k));
-
-  // numeric key handling (keeps existing behavior)
+  // numeric key handling
   keys.forEach(k => k.addEventListener('click', () => {
     const num = k.dataset.num;
     if (!num) return;
