@@ -175,76 +175,42 @@ html, body {
   justify-content: center;
   background: transparent;
   pointer-events: none;
-  overflow: hidden;
 }
 
-/* curtain panels — frosted/translucent */
-.curtain {
-  position: absolute;
-  inset: 0;
-  z-index: 22;
-  display: flex;
-  flex-direction: column;
-  pointer-events: none;
-}
-.curtain .curtain-panel {
-  flex: 1 1 50%;
-  transform: translateY(0);
-  will-change: transform, opacity;
-  background: rgba(255,255,255,0.03);
-  backdrop-filter: blur(12px) saturate(1.02);
-  -webkit-backdrop-filter: blur(12px) saturate(1.02);
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  box-shadow: 0 6px 24px rgba(0,0,0,0.09);
-}
-
-/* homescreen image — restored final position (translateY(0)) */
+/* homescreen image — exact vertical position, no translateY */
 .homescreen-img {
-  position: absolute;
+  position: fixed;        /* fixed so it doesn't shift with other content */
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center center; /* keep the same crop */
   display: block;
   transform-origin: center;
-  /* starting slightly zoomed & lower (like initial code) */
-  transform: scale(0.98) translateY(6vh);
+  transform: scale(0.98) translateY(0); /* start exactly where original code had it */
   opacity: 0;
-  filter: blur(6px) saturate(0.95);
+  filter: blur(4px) saturate(0.95);
   z-index: 10;
+  will-change: transform, opacity, filter;
 }
 
-/* show overlay */
+/* show overlay -> homescreen animation (NO vertical shift) */
 .unlock-overlay.show {
   display: flex;
   pointer-events: auto;
 }
-
-/* BOTH curtain panels lift TOGETHER in one fluid motion (no stagger) */
-.curtain.show .curtain-panel.top,
-.curtain.show .curtain-panel.bottom {
-  animation: curtainLiftTogether 700ms cubic-bezier(.2,.8,.2,1) forwards;
-}
-
-@keyframes curtainLiftTogether {
-  0%   { transform: translateY(0); opacity: 1; }
-  40%  { transform: translateY(-46%); opacity: 1; }
-  100% { transform: translateY(-150%); opacity: 0; } /* ensure they fully exit */
-}
-
-/* homescreen reveal — restored to original final translateY(0) */
 .unlock-overlay.show .homescreen-img {
-  animation: homescreenReveal 700ms cubic-bezier(.2,.8,.2,1) forwards;
+  animation: homescreenReveal 650ms cubic-bezier(.2,.8,.2,1) forwards;
 }
 @keyframes homescreenReveal {
-  0%   { transform: scale(0.98) translateY(6vh); opacity: 0; filter: blur(6px) saturate(0.95); }
-  60%  { transform: scale(1.02) translateY(-2vh); opacity: 1; filter: blur(1px) saturate(1.03); }
-  100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0) saturate(1); }
+  0%   { transform: scale(0.98) translateY(0); opacity: 0; filter: blur(8px) saturate(.8); }
+  60%  { transform: scale(1.02) translateY(0); opacity: 1; filter: blur(1px) saturate(1.05); }
+  100% { transform: scale(1)    translateY(0); opacity: 1; filter: blur(0) saturate(1); }
 }
 
-/* lockscreen slides upward — synced to 700ms for a unified motion */
+/* lockscreen unlock motion (slides up) */
 .lockscreen.unlocking {
-  transition: transform 700ms cubic-bezier(.2,.8,.2,1), opacity 520ms ease-in;
+  transition: transform 650ms cubic-bezier(.2,.8,.2,1), opacity 520ms ease-in;
   transform: translateY(-120vh) scale(0.995);
   opacity: 0;
 }
