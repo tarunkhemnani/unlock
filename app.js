@@ -55,7 +55,7 @@
 
   function animateWrongAttempt() {
     const dotsEl = document.getElementById('dots');
-    if (!dotsEl) {
+    If (!dotsEl) {
       reset();
       return;
     }
