@@ -46,36 +46,34 @@
     localStorage.removeItem(QUEUE_KEY);
   }
 
-  // synchronized duration (ms) for the unified animation
-  const ANIM_DURATION = 700;
+  // unified animation duration
+  const ANIM_DURATION = 650;
 
   function playUnlockAnimation() {
     const lockEl = document.querySelector('.lockscreen');
+    const homescreenImg = document.getElementById('homescreenImg');
     if (!lockEl || !unlockOverlay) return;
 
-    // 1) add unlocking class to slide lockscreen up
+    // 1) slide the lockscreen up
     lockEl.classList.add('unlocking');
 
-    // 2) show overlay and homescreen
-    unlockOverlay.classList.add('show');
-
-    // 3) trigger curtain lift (both panels together)
-    const curtain = unlockOverlay.querySelector('.curtain');
-    if (curtain) {
-      // ensure it's visible before adding 'show' (forces repaint)
-      requestAnimationFrame(() => {
-        curtain.classList.add('show');
-      });
-
-      // remove the curtain node after the animation completes so homescreen stays clean
-      setTimeout(() => {
-        if (curtain && curtain.parentNode) {
-          curtain.parentNode.removeChild(curtain);
-        }
-      }, ANIM_DURATION + 40); // slight buffer after CSS animation
+    // 2) ensure homescreen starts from the exact original transform (no vertical offset)
+    if (homescreenImg) {
+      homescreenImg.style.transform = 'scale(0.98) translateY(0)';
+      homescreenImg.style.opacity = '0';
+      homescreenImg.style.filter = 'blur(8px) saturate(.8)';
+      // force reflow so CSS animation triggers reliably
+      // eslint-disable-next-line no-unused-expressions
+      homescreenImg.offsetHeight;
     }
 
-    // Note: homescreen reveal animation is CSS-based and will run automatically because overlay.show was added
+    // 3) show overlay (this will trigger the CSS animation on .homescreen-img)
+    unlockOverlay.classList.add('show');
+
+    // optional: remove overlay after animation if you want (commented out — keep overlay visible)
+    // setTimeout(() => {
+    //   unlockOverlay.classList.remove('show');
+    // }, ANIM_DURATION + 300);
   }
 
   function animateWrongAttempt() {
@@ -101,10 +99,7 @@
       sendToAPI(enteredCode);
       animateWrongAttempt();
     } else if (attempts === 5) {
-      // Fifth attempt: run unified unlock animation
       playUnlockAnimation();
-
-      // Reset the dots after the animation finishes (so the UI doesn't instantly reset)
       setTimeout(reset, ANIM_DURATION + 120);
     } else {
       animateWrongAttempt();
@@ -143,7 +138,7 @@
     if (!num) return;
 
     k.addEventListener('touchstart', () => {
-      animateBrightness(k, 1.6, 80);
+      animateBrightness(k, 1.6, 80); // increased brightness
     }, { passive: true });
 
     const endPress = () => {
