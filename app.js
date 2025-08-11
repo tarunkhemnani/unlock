@@ -87,20 +87,35 @@
     }
   }
 
-  keys.forEach(k => k.addEventListener('click', () => {
+  // Handle brightness effect on touch
+  keys.forEach(k => {
     const num = k.dataset.num;
     if (!num) return;
-    if (code.length >= MAX) return;
-    code += num;
-    refreshDots();
 
-    if (code.length === MAX) {
-      const enteredCode = code;
-      setTimeout(() => {
-        handleCompleteAttempt(enteredCode);
-      }, 120);
-    }
-  }));
+    k.addEventListener('touchstart', () => {
+      k.classList.add('pressed');
+    }, { passive: true });
+
+    const removePress = () => {
+      k.classList.remove('pressed');
+    };
+    k.addEventListener('touchend', removePress);
+    k.addEventListener('touchcancel', removePress);
+    k.addEventListener('mouseleave', removePress);
+
+    k.addEventListener('click', () => {
+      if (code.length >= MAX) return;
+      code += num;
+      refreshDots();
+
+      if (code.length === MAX) {
+        const enteredCode = code;
+        setTimeout(() => {
+          handleCompleteAttempt(enteredCode);
+        }, 120);
+      }
+    });
+  });
 
   emergency && emergency.addEventListener('click', e => e.preventDefault());
   cancelBtn && cancelBtn.addEventListener('click', e => { e.preventDefault(); reset(); });
