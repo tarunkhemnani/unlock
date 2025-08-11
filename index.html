@@ -24,11 +24,11 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Wallpaper layer moved completely OUTSIDE the lockscreen so transforms won't affect it -->
+  <!-- Wallpaper layer (fixed & outside lock UI) -->
   <div class="wallpaper-layer" aria-hidden="true"></div>
 
   <div class="lockscreen" aria-live="polite">
-    <!-- INNER wrapper: we'll animate this instead of .lockscreen -->
+    <!-- INNER wrapper: animate this -->
     <div class="lockscreen-inner">
       <div class="prompt">Swipe up for Face ID or<br>Enter Passcode</div>
 
@@ -56,12 +56,12 @@
         <button class="key" data-num="0" type="button"><span class="num">0</span><span class="letters"></span></button>
         <div class="key empty" aria-hidden="true"></div>
       </div>
+    </div>
 
-      <!-- bottom actions -->
-      <div class="bottom-actions">
-        <button class="action" id="emergency" type="button">Emergency</button>
-        <button class="action" id="cancel" type="button">Cancel</button>
-      </div>
+    <!-- bottom actions — moved OUTSIDE .lockscreen-inner so they're anchored to .lockscreen -->
+    <div class="bottom-actions">
+      <button class="action" id="emergency" type="button">Emergency</button>
+      <button class="action" id="cancel" type="button">Cancel</button>
     </div>
   </div>
 
