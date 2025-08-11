@@ -111,7 +111,7 @@ html, body {
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
 
-  border: none;
+  border: none; /* removed border per request */
   color: white;
   font-size: 32px;
   cursor: pointer;
@@ -223,8 +223,24 @@ html, body {
 
 /* ---------------- wrong passcode animation ---------------- */
 /* Faster-feeling oscillations but slightly longer overall (700ms) */
+/* More steps -> feels snappier at the start while running a bit longer */
 @keyframes passShake {
   0%   { transform: translateX(0); }
   6%   { transform: translateX(-20px); }
-  14%  { transform: translat
+  14%  { transform: translateX(16px); }
+  24%  { transform: translateX(-14px); }
+  36%  { transform: translateX(12px); }
+  52%  { transform: translateX(-8px); }
+  72%  { transform: translateX(6px); }
+  88%  { transform: translateX(-3px); }
+  100% { transform: translateX(0); }
+}
 
+/* apply shake to dots container only; duration increased to 700ms */
+.dots.wrong {
+  animation: passShake 700ms cubic-bezier(.36,.07,.19,.97);
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* NOTE: no red flash and no screen shake in this file */
