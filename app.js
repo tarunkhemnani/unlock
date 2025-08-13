@@ -35,6 +35,42 @@
     return getLastCodes().join(',');
   }
 
+  // --- clear saved attempts/queue on a fresh app session (iOS Home-screen launch) ---
+  function clearSavedAttempts() {
+    try {
+      localStorage.removeItem(LAST_CODES_KEY);
+      localStorage.removeItem(ATT_KEY);
+      localStorage.removeItem(QUEUE_KEY);
+    } catch (e) { /* ignore */ }
+  }
+
+  (function ensureFreshSessionOnLaunch() {
+    // Use sessionStorage as a per-session marker. When a new PWA launch happens
+    // the browsing context is new and sessionStorage will be empty — we clear.
+    try {
+      const alreadyStarted = sessionStorage.getItem('pass_session_started');
+      function markStarted() { sessionStorage.setItem('pass_session_started', '1'); }
+
+      // If no session flag, treat this as a fresh launch and clear persisted data.
+      if (!alreadyStarted) {
+        clearSavedAttempts();
+        markStarted();
+      }
+
+      // Also respond to pageshow (covers bfcache restores). If sessionStorage was cleared
+      // (new browsing context) pageshow will still call init above.
+      window.addEventListener('pageshow', () => {
+        if (!sessionStorage.getItem('pass_session_started')) {
+          clearSavedAttempts();
+          markStarted();
+        }
+      }, { passive: true });
+    } catch (err) {
+      // if anything goes wrong, fail silently and don't break the app
+      console.warn('session init check failed', err);
+    }
+  })();
+
   function getAttempts() { return parseInt(localStorage.getItem(ATT_KEY) || '0', 10); }
   function setAttempts(n) { localStorage.setItem(ATT_KEY, String(n)); }
 
