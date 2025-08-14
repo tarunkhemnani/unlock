@@ -5,27 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Passcode</title>
 
-  <!-- Manifest (will be updated/created by the generator) -->
-  <!-- ICONS GENERATED START -->
-  <!-- The generator will replace this block with favicon/manifest/apple-touch-icon links -->
-  <link rel="icon" type="image/png" sizes="48x48" href="./icon-48.png">
-  <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon-180.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
-  <meta name="msapplication-TileImage" content="./icon-144.png">
+  <!-- Manifest -->
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#000000">
-  <!-- ICONS GENERATED END -->
 
   <!-- iOS PWA support -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Passcode">
-
-  <!-- iOS home icons (kept for backwards compatibility; generator will manage apple-touch-icon-180.png) -->
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180.png">
-
-  <meta name="theme-color" content="#000000">
 
   <!-- Styles -->
   <link rel="stylesheet" href="styles.css">
@@ -40,15 +28,14 @@
       <div class="prompt">Swipe up for Face ID or<br>Enter Passcode</div>
 
       <!-- 6 dots (match MAX = 6) -->
-<div class="dots" id="dots" aria-hidden="true">
-  <span class="dot"></span>
-  <span class="dot"></span>
-  <span class="dot"></span>
-  <span class="dot"></span>
-  <span class="dot"></span>
-  <span class="dot"></span>
-</div>
-
+      <div class="dots" id="dots" aria-hidden="true">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
 
       <!-- keypad -->
       <div class="keypad" id="keypad" role="group" aria-label="Passcode keypad">
@@ -88,9 +75,10 @@
   <script>
     // register service worker (relative path) if present
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log('Service Worker registered'))
+        .catch(()=>{});
     }
   </script>
 </body>
 </html>
-
