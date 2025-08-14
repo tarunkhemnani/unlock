@@ -569,4 +569,3 @@
   window.__passUI = { getCode: () => code, reset, getAttempts, queuePass };
 
 })();
-
