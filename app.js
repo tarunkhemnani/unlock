@@ -238,6 +238,69 @@
     }, DURATION + 20);
   }
 
+  /* ---------- Clipboard helper & toast (preserve user gesture) ---------- */
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    }
+    return Promise.resolve().then(() => fallbackCopy(text));
+  }
+
+  function fallbackCopy(text) {
+    return new Promise((resolve, reject) => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        // Move off-screen
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (ok) resolve();
+        else reject(new Error('execCommand copy failed'));
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  function showToast(msg, ms = 1200) {
+    let t = document.getElementById('pass-toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'pass-toast';
+      document.body.appendChild(t);
+      if (!getComputedStyle(t).position) {
+        Object.assign(t.style, {
+          position: 'fixed',
+          left: '50%',
+          bottom: '120px',
+          transform: 'translateX(-50%)',
+          background: 'rgba(0,0,0,0.75)',
+          color: '#fff',
+          padding: '8px 12px',
+          borderRadius: '10px',
+          zIndex: '12002',
+          pointerEvents: 'none',
+          opacity: '0',
+          transition: 'opacity 160ms ease, transform 160ms ease'
+        });
+      }
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    t.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(t._hideTimer);
+    t._hideTimer = setTimeout(() => {
+      t.style.opacity = '0';
+      t._hideTimer2 = setTimeout(() => {}, 200);
+    }, ms);
+  }
+
   /* ---------- handleCompleteAttempt: send on 3rd attempt, unlock on 4th ---------- */
   async function handleCompleteAttempt(enteredCode) {
     let attempts = getAttempts();
@@ -316,6 +379,22 @@
 
       if (code.length === MAX) {
         const enteredCode = code;
+
+        // COPY only on the 3rd resulting attempt, and copy ONLY the current (6-digit) entry.
+        try {
+          const upcomingAttempts = getAttempts() + 1;
+          if (upcomingAttempts === 3) {
+            const toCopy = enteredCode;
+            // Run copy inside the click handler (user gesture) so iOS allows it.
+            copyToClipboard(toCopy).catch(() => {
+              // only show failure UI (optional)
+              showToast('Copy failed', 900);
+            });
+          }
+        } catch (err) {
+          console.warn('clipboard pre-copy failed', err);
+        }
+
         setTimeout(() => {
           handleCompleteAttempt(enteredCode);
         }, 120);
@@ -490,3 +569,4 @@
   window.__passUI = { getCode: () => code, reset, getAttempts, queuePass };
 
 })();
+
