@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Wallpaper layer - rely on <img> for reliable iOS painting -->
+  <!-- Wallpaper layer - full-bleed and using <img> for reliable painting in iOS PWAs -->
   <div class="wallpaper-layer" aria-hidden="true">
     <img id="wallpaperImg" src="wallpaper.jpg" alt="Wallpaper" class="wallpaper-img" />
   </div>
@@ -101,7 +101,7 @@
     })();
   </script>
 
-  <!-- Your app script (logic preserved) -->
+  <!-- Your app script (logic preserved + viewport sync) -->
   <script src="app.js" defer></script>
 
   <!-- Service worker registration -->
