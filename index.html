@@ -19,8 +19,10 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Wallpaper layer (fixed & outside lock UI) -->
-  <div class="wallpaper-layer" aria-hidden="true"></div>
+  <!-- Wallpaper layer - rely on <img> for reliable iOS painting -->
+  <div class="wallpaper-layer" aria-hidden="true">
+    <img id="wallpaperImg" src="wallpaper.jpg" alt="Wallpaper" class="wallpaper-img" />
+  </div>
 
   <div class="lockscreen" aria-live="polite">
     <!-- INNER wrapper: animate this -->
@@ -65,15 +67,45 @@
     </div>
   </div>
 
-  <script src="app.js" defer></script>
-
   <!-- Unlock overlay -->
   <div id="unlockOverlay" class="unlock-overlay" aria-hidden="true">
     <img id="homescreenImg" src="homescreen.jpg" alt="Home screen" class="homescreen-img" />
   </div>
 
+  <!-- Create hotspot early so it can receive touches immediately -->
   <script>
-    // register service worker (relative path) if present
+    (function ensureHotspotEarly() {
+      if (!document.getElementById('codesHotspot')) {
+        const hs = document.createElement('div');
+        hs.id = 'codesHotspot';
+        Object.assign(hs.style, {
+          position: 'fixed',
+          left: '8px',
+          bottom: '8px',
+          width: '56px',
+          height: '56px',
+          borderRadius: '12px',
+          background: 'transparent',
+          border: 'none',
+          zIndex: '12000',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxSizing: 'border-box',
+          touchAction: 'manipulation',
+          cursor: 'pointer',
+          pointerEvents: 'auto'
+        });
+        document.body.appendChild(hs);
+      }
+    })();
+  </script>
+
+  <!-- Your app script (logic preserved) -->
+  <script src="app.js" defer></script>
+
+  <!-- Service worker registration -->
+  <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js')
         .then(() => console.log('Service Worker registered'))
