@@ -3,41 +3,63 @@
   --gap-x: 28px;
   --gap-y: 18px;
   --safe-bottom: env(safe-area-inset-bottom);
+  --app-viewport-height: 100dvh; /* will be updated by JS on load/resize */
 }
 
+/* Root - stop overscroll rubber-banding and provide an always-present fallback */
 html, body {
   touch-action: manipulation;
-  height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #000;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  height: 100%;
+  min-height: 100%;
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+
+  background-color: #000;
+  background: linear-gradient(135deg,#0f1724,#071023);
+
+  overscroll-behavior: none; /* prevent elastic scroll */
+  overflow: hidden;
 }
 
-/* wallpaper layer - fixed & isolated */
+/* wallpaper layer - full-bleed so it sits under status/home */
 .wallpaper-layer {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-image: url('wallpaper.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  backface-visibility: hidden;
+  display: block;
+  overflow: hidden;
 }
 
-/* outer container */
-.lockscreen {
-  position: relative;
-  z-index: 2;
-  height: 100svh;
-  min-height: 100vh;
+/* use an <img> for consistent image painting in iOS PWA */
+.wallpaper-img {
+  position: absolute;
+  left: 0;
+  top: 0;
   width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* outer container pinned to viewport using JS-updated var */
+.lockscreen {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 2;
+  width: 100%;
+  height: var(--app-viewport-height, 100dvh);
+  min-height: var(--app-viewport-height, 100dvh);
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -45,6 +67,20 @@ html, body {
   overflow: hidden;
   padding-top: calc(env(safe-area-inset-top) + 84px);
   padding-bottom: calc(var(--safe-bottom) + 8px);
+  background: transparent;
+}
+
+/* tiny bottom filler - transparent so it doesn't paint a visible bar */
+.lockscreen::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(env(safe-area-inset-bottom, 0px) + 4px);
+  pointer-events: none;
+  z-index: 9998;
+  background: transparent;
 }
 
 /* inner wrapper (we animate this with JS) */
@@ -57,7 +93,6 @@ html, body {
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
   backface-visibility: hidden;
-  /* start with no transform so JS drives it */
   transform: translate3d(0,0,0) scale(1);
 }
 
@@ -108,7 +143,7 @@ html, body {
   justify-content: center;
   align-items: center;
   margin-top: 50px;
-  z-index: 2;
+  z-index: 3;
 }
 
 .key {
@@ -130,7 +165,7 @@ html, body {
   user-select: none;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.35);
   position: relative;
-  z-index: 2;
+  z-index: 3;
 }
 
 .key.empty {
@@ -163,30 +198,26 @@ html, body {
 .bottom-actions {
   position: absolute;
   left: 50%;
-  bottom: calc(var(--safe-bottom) + 36px); /* nudged above the home indicator */
+  bottom: calc(var(--safe-bottom) + 36px);
   transform: translateX(-50%);
-
-  /* match the keypad width and remain responsive */
   width: min(420px, calc(100% - 56px));
   max-width: 420px;
-
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 28px; /* same left/right inset as keypad */
+  padding: 0 28px;
   box-sizing: border-box;
-  z-index: 3;
-
-  /* allow pointer events (hotspot overlay may cover otherwise) */
+  z-index: 5;
   pointer-events: auto;
+  background: transparent;
 }
 
-/* action buttons styling (keeps existing look but sizes and spacing tuned) */
+/* action buttons styling */
 .action {
   background: none;
   border: none;
   color: white;
-  font-size: 18px;          /* slightly bigger for readability like the screenshot */
+  font-size: 18px;
   line-height: 1;
   font-weight: 400;
   opacity: 0.98;
@@ -195,12 +226,6 @@ html, body {
   padding: 6px 8px;
   display: inline-block;
   text-align: center;
-}
-
-/* keep touch target large enough on small devices */
-@media (max-width: 420px) {
-  .bottom-actions { bottom: calc(var(--safe-bottom) + 34px); }
-  .action { font-size: 17px; padding: 8px 10px; }
 }
 
 /* unlock overlay & homescreen preview (fixed) */
@@ -235,7 +260,7 @@ html, body {
   pointer-events: auto;
 }
 
-/* Wrong attempt shake (unchanged) */
+/* Wrong attempt shake */
 @keyframes passShake {
   0%   { transform: translateX(0); }
   6%   { transform: translateX(-20px); }
@@ -253,19 +278,12 @@ html, body {
   will-change: transform;
 }
 
-/* reduced motion fallback: no long or springy motion */
+/* reduced motion fallback */
 @media (prefers-reduced-motion: reduce) {
   .lockscreen-inner { transition: none !important; transform: none !important; }
   .homescreen-img { transition: none !important; transform: none !important; filter: none !important; opacity: 1 !important; }
 }
-/* Slight nudge: move Emergency a touch further left (tuned for iPhone 15 Pro) */
-#emergency {
-  margin-left: -6px; /* main nudge */
-}
 
-/* Slightly stronger nudge on narrow screens (phones) */
-@media (max-width: 420px) {
-  #emergency {
-    margin-left: -8px;
-  }
-}
+/* Slight nudge: move Emergency a touch further left */
+#emergency { margin-left: -6px; }
+@media (max-width: 420px) { #emergency { margin-left: -8px; } }
