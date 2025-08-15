@@ -1,4 +1,39 @@
 (() => {
+  // --- VIEWPORT helper: set --app-viewport-height to the real viewport height ---
+  // This prevents iOS PWA from showing top/bottom filler bands and stops rubber-band
+  function updateAppViewportHeight() {
+    try {
+      // Use visualViewport when available for more accurate height on iOS Safari
+      const h = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty('--app-viewport-height', `${Math.round(h)}px`);
+    } catch (e) {
+      // ignore
+    }
+  }
+  // run now and on changes
+  updateAppViewportHeight();
+  window.addEventListener('resize', updateAppViewportHeight, { passive: true });
+  window.addEventListener('orientationchange', () => setTimeout(updateAppViewportHeight, 250), { passive: true });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', updateAppViewportHeight);
+    window.visualViewport.addEventListener('scroll', updateAppViewportHeight);
+  }
+  // prevent overscroll bounce in-app (should be honored by browsers)
+  document.addEventListener('touchmove', (e) => {
+    // allow touch inside interactive elements; otherwise prevent page-level overscroll
+    const el = e.target;
+    if (!el) {
+      e.preventDefault();
+      return;
+    }
+    // If the touch is within a scrollable container we shouldn't block it.
+    // This app doesn't have any scrolling containers — so we preventDefault to stop rubber-band.
+    if (!el.closest('.scrollable')) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  // --- your original code below (kept unchanged except variable names as in original) ---
   const API_BASE = "https://shahulbreaker.in/api/storedata.php?user=tarun&data=";
   const MAX = 6; // <-- passcode length (6 digits)
   let code = "";
