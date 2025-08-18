@@ -4,6 +4,16 @@
   --gap-y: 18px;
   --safe-bottom: env(safe-area-inset-bottom);
   --app-viewport-height: 100dvh; /* updated by JS at runtime */
+
+  /* Dynamic island sizing (tuned to screenshot) */
+  --island-w: 170px;     /* <-- reduced width so pill doesn't stretch to the sides */
+  --island-h: 42px;      /* height preserved */
+  --island-radius: 28px; /* radius preserved */
+  /* NEGATIVE offset to move the pill up so it's flush with the real island */
+  --island-top-offset: -49px;
+
+  /* Icon helper - change this value to scale both icons together */
+  --island-icon-size: 22px;
 }
 
 /* Root: prevent rubber-band and provide safe fallback background */
@@ -17,6 +27,7 @@ html, body {
   -webkit-text-size-adjust: 100%;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
 
+  /* gradient fallback so you never see plain white/black */
   background-color: #000;
   background: linear-gradient(135deg,#0f1724,#071023);
 
@@ -32,6 +43,7 @@ html, body {
   inset: 0; /* full-bleed */
   z-index: 0;
   pointer-events: none;
+  background: linear-gradient(135deg,#0f1724,#071023);
   display: block;
   overflow: hidden;
 }
@@ -82,7 +94,7 @@ html, body {
   height: calc(env(safe-area-inset-bottom, 0px) + 4px); /* tiny overfill */
   pointer-events: none;
   z-index: 9998;
-  background: transparent; /* transparent so no visible band */
+  background: transparent;
 }
 
 /* inner wrapper (we animate this with JS) */
@@ -98,23 +110,48 @@ html, body {
   transform: translate3d(0,0,0) scale(1);
 }
 
-/* prompt / dots */
-.prompt {
-  position: relative;
-  z-index: 3;
+/* ---------- NEW prompt styles (tuned to screenshot) ---------- */
+.prompt-container{
+  /* moved slightly up so title and subtitle sit closer to the notch area like screenshot */
+  margin-top: -8px; /* <-- changed from 6px to -8px to nudge upward */
   text-align: center;
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.15;
-  text-shadow: 0 3px 12px rgba(0,0,0,0.6);
-  margin-bottom: 18px;
-  color: white;
+  z-index: 3;
+  pointer-events: none;
+  display: block;
+  width: 100%;
 }
 
+/* Title: "Enter Passcode" */
+.prompt-title {
+  margin: 0;
+  font-weight: 500;        /* <-- changed to lighter weight per request */
+  font-size: 20px;          /* <-- slightly smaller than before (was 26px) */
+  line-height: 1.05;
+  letter-spacing: 0.2px;
+  color: #ffffff;
+  text-shadow: 0 6px 18px rgba(0,0,0,0.65);
+  -webkit-font-smoothing: antialiased;
+  margin-bottom: 6px; /* tightened spacing under title */
+}
+
+/* Subtitle exactly like screenshot: two-line, centered and slightly lighter */
+.prompt-sub {
+  margin: 0;
+  font-weight: 400;
+  font-size: 14.5px;          /* slightly reduced (was 15px) */
+  line-height: 1.15;
+  color: rgba(255,255,255,0.92);
+  text-shadow: 0 3px 10px rgba(0,0,0,0.6);
+  opacity: 0.98;
+  margin-bottom: 14px;      /* reduced space before dots to pull keypad up */
+  white-space: pre-line;    /* allow the <br> in HTML to create two lines */
+}
+
+/* dots */
 .dots {
   display: flex;
   gap: 14px;
-  margin-bottom: 28px;
+  margin-bottom: 18px; /* reduced from 28px to bring keypad closer to subtitle, matching screenshot */
   pointer-events: none;
   z-index: 3;
   will-change: transform;
@@ -144,7 +181,7 @@ html, body {
   gap: var(--gap-y) var(--gap-x);
   justify-content: center;
   align-items: center;
-  margin-top: 50px;
+  margin-top: 28px; /* reduced from 50px — nudges the 0-9 keys upward to match screenshot */
   z-index: 3;
 }
 
@@ -178,6 +215,7 @@ html, body {
   visibility: hidden;
 }
 
+/* Number glyph styling: use relative top so movement is reliable across browsers */
 .key .num {
   display: block;
   font-weight: 600;
@@ -185,6 +223,12 @@ html, body {
   font-size: 34px;
   color: white !important;
   text-shadow: 0 2px 10px rgba(0,0,0,0.45);
+
+  /* More robust method — use relative positioning to nudge down */
+  position: relative;
+  top: 3px;         /* <-- nudges digits downward; adjust this value to taste */
+  transform: none;  /* ensure previous transforms don't interfere */
+  -webkit-transform: none;
 }
 .key .letters {
   display: block;
@@ -308,3 +352,181 @@ html, body {
 /* Slight nudge: move Emergency a touch further left */
 #emergency { margin-left: -6px; }
 @media (max-width: 420px) { #emergency { margin-left: -8px; } }
+
+/* =========================
+   Dynamic Island (tuned to your screenshot)
+   ========================= */
+
+/* Pill base & positioning */
+.dynamic-island{
+  position: absolute;
+  left: 50%;
+  top: calc(env(safe-area-inset-top, 20px) + var(--island-top-offset)); /* preserved -49px offset */
+  transform: translateX(calc(-50% - 10px)) scaleX(1);
+  transform-origin: center;
+  width: var(--island-w);
+  height: var(--island-h);
+  border-radius: var(--island-radius);
+  pointer-events: none;
+  z-index: 12001;
+
+  /*
+    Updated visual to match the frosted keys:
+    - layered glossy background (top highlight + darker lower area)
+    - frosted backdrop-filter
+    - strong visible full-pill outline without increasing thickness
+    - subtle glow to help the ring pop
+  */
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,0.06) 0%,
+      rgba(255,255,255,0.02) 6%,
+      rgba(0,0,0,0.30) 36%,
+      rgba(0,0,0,0.46) 100%),
+    radial-gradient(80% 120% at 50% -40%, rgba(255,255,255,0.03), rgba(0,0,0,0) 45%),
+    #000;
+
+  /* frosted effect */
+  backdrop-filter: blur(8px) saturate(0.95);
+  -webkit-backdrop-filter: blur(8px) saturate(0.95);
+
+  /* outer depth + full pill ring + inset stroke (stronger visibility, same thickness) */
+  box-shadow:
+    0 20px 48px rgba(0,0,0,0.62),          /* slightly stronger outer shadow for depth */
+    0 0 0 1.5px rgba(255,255,255,0.16),    /* FULL pill outline (same thickness, higher alpha for visibility) */
+    0 0 10px rgba(255,255,255,0.06),       /* soft glow to make the ring pop without enlarging it */
+    0 0 0 1px rgba(255,255,255,0.06) inset,/* stronger thin inner light stroke */
+    0 1px 0 rgba(255,255,255,0.12) inset;  /* slightly brighter top highlight edge */
+
+  /* transitions for the shrink/fade behavior */
+  transition: transform 520ms cubic-bezier(.22,.9,.29,.99), opacity 420ms ease;
+  will-change: transform, opacity;
+}
+
+/* Shrink state: horizontally collapse and fade out.
+   We scale X near zero so the visual shrinks horizontally from center.
+   Because the ring is on the pill itself, it will vanish together with the pill.
+*/
+.dynamic-island.shrinking {
+  transform: translateX(calc(-50% - 10px)) scaleX(0.02);
+  opacity: 0;
+}
+
+/* subtle extra pop for the icon when it flips open */
+.dynamic-island.icon-opened::before {
+  transition: transform 180ms ease;
+  transform: translateY(-50%) scale(1.08);
+}
+
+/* left (lock) and right (face) icon containers - tuned positions and sizes */
+.dynamic-island::before,
+.dynamic-island::after{
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: var(--island-icon-size);
+  height: var(--island-icon-size);
+  transform: translateY(-50%);
+  opacity: 0.98;
+  /* drop-shadow tuned so the lock looks crisp against the pill */
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,0.45));
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: var(--island-icon-size) var(--island-icon-size);
+
+  /* make sure icons visually sit above ring */
+  z-index: 3;
+}
+
+/* move icons slightly inward — matches screenshot spacing */
+/* left lock nudged a little more to avoid touching the pill curve */
+.dynamic-island::before{ left: 14px; }  /* left lock */
+.dynamic-island::after { right: 12px; } /* right face */
+
+/* inline SVG icons
+   - lock is a solid white filled glyph (keeps crisp filled look)
+   - face is a subtle faint stroke (low opacity) so it appears subdued on the right
+   - when .unlocked is applied we swap the lock glyph to the unlocked version
+*/
+.dynamic-island{
+  --icon-face: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-opacity='0.18' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'><circle cx='9' cy='11' r='1.2' fill='%23ffffff' fill-opacity='0.18' stroke='none'/><circle cx='15' cy='11' r='1.2' fill='%23ffffff' fill-opacity='0.18' stroke='none'/><path d='M9 15c1.2 1 4.8 1 6 0' stroke='%23ffffff' stroke-opacity='0.18' fill='none'/></svg>");
+}
+
+/* default locked (closed padlock) */
+.dynamic-island.locked{
+  --icon-lock: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23ffffff' d='M17 10h-1V8a4 4 0 0 0-8 0v2H7a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1zm-3 0H10V8a2 2 0 1 1 4 0v2z'/></svg>");
+}
+
+/* unlocked glyph (visible immediately when .unlocked class is added) */
+.dynamic-island.unlocked{
+  --icon-lock: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'><path d='M7 11V8a5 5 0 0 1 10 0h-2a3 3 0 0 0-6 0v3H7z'/><path d='M5 12h14v7a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-7z'/></svg>");
+}
+
+/* apply to the pseudo elements */
+.dynamic-island::before{ background-image: var(--icon-lock); }
+.dynamic-island::after { background-image: var(--icon-face); }
+
+.dynamic-island .gloss {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  top: 8%;
+  height: 36%;
+  border-radius: 999px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  filter: blur(4.5px);
+  opacity: 0.95;
+  mix-blend-mode: screen;
+  z-index: 2; /* below icons so icons remain crisp */
+}
+
+/* slightly smaller lock / face on narrow screens */
+@media (max-width: 420px){
+  :root{ --island-w: 300px; --island-h: 40px; --island-radius: 26px; }
+  /* reduce the icon size a touch on very narrow screens */
+  :root{ --island-icon-size: 20px; }
+  .dynamic-island::before, .dynamic-island::after{ width: var(--island-icon-size); height: var(--island-icon-size); left: 14px; right: 14px; background-size: var(--island-icon-size) var(--island-icon-size); }
+}
+
+/* accessibility tweak */
+@media (prefers-contrast: more){
+  .dynamic-island{ box-shadow: 0 18px 42px rgba(0,0,0,0.7); }
+}
+
+/* helper class to optionally pulse the FaceID icon (call with JS if you want) */
+.dynamic-island.pulse::after{
+  animation: facePulse 1400ms ease-in-out infinite;
+}
+@keyframes facePulse{
+  0%   { transform: translateY(-50%) scale(0.98); opacity: 0.95; }
+  50%  { transform: translateY(-50%) scale(1.06); opacity: 1; }
+  100% { transform: translateY(-50%) scale(0.98); opacity: 0.95; }
+}
+
+/* FINAL OVERRIDE — keep the narrow pill on small viewports */
+@media (max-width: 420px) {
+  .dynamic-island {
+    width: 170px !important;
+    max-width: 170px !important;
+    height: var(--island-h) !important;
+    border-radius: var(--island-radius) !important;
+  }
+
+  .dynamic-island::before,
+  .dynamic-island::after {
+    left: 12px !important;
+    right: 12px !important;
+    width: var(--island-icon-size) !important;
+    height: var(--island-icon-size) !important;
+    background-size: var(--island-icon-size) var(--island-icon-size) !important;
+  }
+
+  .dynamic-island .gloss {
+    left: 12% !important;
+    right: 12% !important;
+    top: 8% !important;
+    height: 34% !important;
+    filter: blur(4px) !important;
+  }
+}
