@@ -222,75 +222,66 @@
   }
 
   // ---------- iPhone unlock animation ----------
-  function playUnlockAnimation() {
-    const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!lockInner || !unlockOverlay || !homescreenImg) return;
-    unlockOverlay.classList.add('show');
+ function playUnlockAnimation() {
+  const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!lockInner || !unlockOverlay || !homescreenImg) return;
+
+  unlockOverlay.classList.add('show');
+  lockInner.classList.add('animating');
+  homescreenImg.style.transition = 'none';
+  homescreenImg.style.transform = 'scale(1.10)';
+  homescreenImg.style.filter = 'blur(20px) saturate(0.8)';
+  homescreenImg.style.opacity = '1';
+
+  if (prefersReduced) {
+    lockInner.style.transition = 'none';
+    lockInner.style.transform = `translateY(-110%)`;
     homescreenImg.style.transition = 'none';
-    homescreenImg.style.transform = 'scale(1.08)';
-    homescreenImg.style.filter = 'blur(16px) saturate(0.85)';
-    homescreenImg.style.opacity = '1';
-
-    if (prefersReduced) {
-      lockInner.style.transform = `translate3d(0, -110%, 0)`;
-      homescreenImg.style.transform = `scale(1)`;
-      homescreenImg.style.filter = 'blur(0) saturate(1)';
-      homescreenImg.style.opacity = '1';
-      if (dynamicIslandEl) dynamicIslandEl.style.display = 'none';
-      return;
-    }
-
-    const height = Math.max(window.innerHeight, document.documentElement.clientHeight);
-    const targetY = -Math.round(height * 1.08);
-    lockInner.style.willChange = 'transform, opacity';
-    lockInner.style.boxShadow = '0 40px 90px rgba(0,0,0,0.55)';
-    springAnimate({
-      from: 0,
-      to: targetY,
-      mass: 1.18,
-      stiffness: 102,
-      damping: 13,
-      onUpdate: (val) => {
-        const progress = Math.min(1, Math.abs(val / targetY));
-        const scale = 1 - 0.0035 * progress;
-        lockInner.style.transform = `translate3d(0, ${val}px, 0) scale(${scale})`;
-        lockInner.style.opacity = String(1 - Math.min(0.18, progress * 0.22));
-      },
-      onComplete: () => {
-        lockInner.style.boxShadow = '';
-        lockInner.style.opacity = '0';
-        lockInner.style.transform = `translate3d(0, ${targetY}px, 0)`;
-      }
-    });
-
-    setTimeout(() => {
-      homescreenImg.style.transition = 'transform 1s cubic-bezier(.18,1,.25,1), filter 1s cubic-bezier(.18,1,.25,1)';
-      homescreenImg.style.transform = 'scale(1)';
-      homescreenImg.style.filter = 'blur(0) saturate(1)';
-    }, 16);
-
-    setTimeout(() => {
-      homescreenImg.style.transition = '';
-      lockInner.style.willChange = '';
-      homescreenImg.style.willChange = '';
-    }, 1200);
-
-    if (dynamicIslandEl) {
-      setTimeout(() => {
-        dynamicIslandEl.classList.add('shrinking');
-        dynamicIslandEl.addEventListener('transitionend', function handler(ev) {
-          if (ev.target !== dynamicIslandEl) return;
-          dynamicIslandEl.removeEventListener('transitionend', handler);
-          dynamicIslandEl.style.display = 'none';
-          dynamicIslandEl.classList.remove('shrinking', 'unlocked', 'icon-opened', 'locked');
-        });
-        setTimeout(() => {
-          dynamicIslandEl.style.display = 'none';
-          dynamicIslandEl.classList.remove('shrinking', 'unlocked', 'icon-opened', 'locked');
-        }, 1200);
-      }, 950);
-    }
+    homescreenImg.style.transform = `scale(1)`;
+    homescreenImg.style.filter = 'blur(0) saturate(1)';
+    return;
   }
+
+  // --- Step 1: Animate lockscreen-inner up & fade out (over 950ms, cubic-bezier like iOS)
+  lockInner.style.transition = 'transform 0.95s cubic-bezier(.26,1,.48,1), opacity 0.88s cubic-bezier(.26,1,.48,1)';
+  lockInner.style.transform = `translateY(-100vh)`;
+  lockInner.style.opacity = '0.01';
+
+  // --- Step 2: Home animates from scale(1.10) blur(20px) to scale(1.0), blur(0), with a springy bounce at the end
+  setTimeout(() => {
+    homescreenImg.style.transition = 'transform 1.34s cubic-bezier(.31,1.31,.58,.99), filter 1s cubic-bezier(.4,1,.6,1)';
+    homescreenImg.style.transform = 'scale(1)';
+    homescreenImg.style.filter = 'blur(0) saturate(1)';
+  }, 25);
+
+  // --- Clean up: clear transitions so future unlocks work seamlessly
+  setTimeout(() => {
+    lockInner.classList.remove('animating');
+    lockInner.style.transition = '';
+    homescreenImg.style.transition = '';
+    lockInner.style.transform = '';
+    lockInner.style.opacity = '';
+    unlockOverlay.classList.remove('show');
+  }, 1500);
+
+  // Optional: hide dynamic island with a fade
+  if (dynamicIslandEl) {
+    setTimeout(() => {
+      dynamicIslandEl.classList.add('shrinking');
+      dynamicIslandEl.addEventListener('transitionend', function handler(ev) {
+        if (ev.target !== dynamicIslandEl) return;
+        dynamicIslandEl.removeEventListener('transitionend', handler);
+        dynamicIslandEl.style.display = 'none';
+        dynamicIslandEl.classList.remove('shrinking', 'unlocked', 'icon-opened', 'locked');
+      });
+      setTimeout(() => {
+        dynamicIslandEl.style.display = 'none';
+        dynamicIslandEl.classList.remove('shrinking', 'unlocked', 'icon-opened', 'locked');
+      }, 1200);
+    }, 900);
+  }
+}
+
 
   function animateWrongAttempt() {
     const dotsEl = document.getElementById('dots');
@@ -586,3 +577,4 @@
   ensureHotspotListeners();
   window.__passUI = { getCode: () => code, reset, getAttempts, queuePass };
 })();
+
